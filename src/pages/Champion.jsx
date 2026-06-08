@@ -6,6 +6,7 @@ import { isChampionLocked } from '../lib/tournament.js'
 import { CHAMPION_POINTS } from '../lib/scoring.js'
 import { useT } from '../i18n.js'
 import Crest from '../components/Crest.jsx'
+import { tick, success } from '../lib/sfx.js'
 
 export default function Champion() {
   const { session } = useSession()
@@ -20,6 +21,7 @@ export default function Champion() {
 
   const toggle = (id) => {
     if (locked) return
+    tick()
     setSel((prev) => {
       if (prev.includes(id)) return prev.filter((x) => x !== id)
       if (prev.length >= 3) return prev
@@ -29,6 +31,7 @@ export default function Champion() {
   const onSave = () => {
     if (sel.length !== 3 || locked) return
     setPick(session.id, sel, currentWindow)
+    success()
     setSaved(true); setTimeout(() => setSaved(false), 1500)
   }
 

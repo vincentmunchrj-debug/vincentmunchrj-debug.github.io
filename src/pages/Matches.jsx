@@ -5,6 +5,7 @@ import { teamName } from '../data/teams.js'
 import { scoreMatch } from '../lib/scoring.js'
 import { useT } from '../i18n.js'
 import Crest from '../components/Crest.jsx'
+import { tick, success } from '../lib/sfx.js'
 
 export default function Matches() {
   const { session } = useSession()
@@ -35,9 +36,10 @@ function Stepper({ value, onChange, disabled }) {
   const empty = value === '' || value == null
   const dec = () => {
     if (empty) return
+    tick()
     onChange(value <= 0 ? '' : value - 1) // 0 puis − => on revide la case
   }
-  const inc = () => onChange(empty ? 0 : Math.min(20, value + 1))
+  const inc = () => { tick(); onChange(empty ? 0 : Math.min(20, value + 1)) }
   return (
     <div className="stepper">
       <button type="button" className="step-btn" disabled={disabled}
@@ -60,6 +62,7 @@ function MatchCard({ match, bet, playerId, onSaved }) {
   const canSave = !locked && home !== '' && away !== ''
   const onSave = () => {
     setBet(playerId, match.id, { home: Number(home), away: Number(away) })
+    success()
     setSaved(true); setTimeout(() => setSaved(false), 1500); onSaved && onSaved()
   }
 
