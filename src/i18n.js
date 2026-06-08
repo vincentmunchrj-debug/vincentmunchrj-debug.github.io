@@ -20,6 +20,7 @@ const DICT = {
   pt: {
     tagline: 'Bolão entre amigos · Copa do Mundo 2026',
     enterHint: 'Toque na taça para entrar',
+    authorLine: 'por Vincent Munch',
     nickname: 'Seu apelido',
     nicknamePlaceholder: 'Ex.: Vince',
     enter: 'Entrar',
@@ -91,6 +92,7 @@ const DICT = {
   fr: {
     tagline: 'Pronostics entre amis · Coupe du Monde 2026',
     enterHint: 'Touchez la coupe pour entrer',
+    authorLine: 'par Vincent Munch',
     nickname: 'Votre pseudo',
     nicknamePlaceholder: 'Ex. : Vince',
     enter: 'Entrer',

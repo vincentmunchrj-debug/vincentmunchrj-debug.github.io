@@ -47,6 +47,13 @@ export default function Login() {
       )}
       {!open && <div className="entry-hint">{t('enterHint')}</div>}
 
+      {!open && (
+        <div className="entry-footer">
+          <div className="ef-author">{t('authorLine')}</div>
+          <div className="ef-copy">© 2026 RIO SELVAGEM STUDIO</div>
+        </div>
+      )}
+
       {/* Feuille de saisie du nom */}
       {open && (
         <div className="entry-sheet" onClick={(e) => { if (e.target.classList.contains('entry-sheet')) setOpen(false) }}>
