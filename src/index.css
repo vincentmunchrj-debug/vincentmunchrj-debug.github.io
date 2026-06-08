@@ -203,13 +203,22 @@ body {
 .splash-logo { width: 210px; max-width: 56%; height: auto; filter: drop-shadow(0 6px 30px rgba(255,255,255,.18));
   animation: splashIn .9s ease both; }
 @keyframes splashIn { from { opacity: 0; transform: scale(.92); } to { opacity: 1; transform: scale(1); } }
-.splash-author { margin-top: 20px; color: #fff; font-size: 16px; font-weight: 600; }
-.splash-studio { color: #cfd6e2; font-size: 15px; font-weight: 200; letter-spacing: 5px; text-indent: 5px; margin-top: 6px; }
-.splash-copy { color: rgba(255,255,255,.45); font-size: 12px; margin-top: 10px; }
+.splash-studio { margin-top: 24px; color: #e8edf4; font-size: 17px; font-weight: 300; letter-spacing: 6px; text-indent: 6px;
+  text-shadow: 0 1px 10px rgba(0,0,0,.6); }
 
 /* ---------- Écran d'entrée ---------- */
 .entry { position: fixed; inset: 0; overflow: hidden; }
 .entry-bg { position: absolute; inset: 0; background: url(/img/entry.jpg) center/cover no-repeat; }
+.entry-bottom { position: absolute; bottom: calc(env(safe-area-inset-bottom, 0px) + 96px); left: 0; right: 0;
+  text-align: center; z-index: 4; pointer-events: none; padding: 0 14px; }
+.entry-title-big { font-size: clamp(38px, 13vw, 66px); font-weight: 900; line-height: .92; letter-spacing: 1px;
+  background: linear-gradient(180deg, #ffe9a8 0%, #f6b026 52%, #de8200 100%);
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent;
+  filter: drop-shadow(0 3px 10px rgba(0,0,0,.75)); }
+.entry-studio-big { margin-top: 16px; color: #fff; font-size: 19px; font-weight: 300; letter-spacing: 6px;
+  text-indent: 6px; text-shadow: 0 1px 8px rgba(0,0,0,.9); }
+.entry-author { margin-top: 22px; color: #fff; font-size: 18px; font-weight: 600; text-shadow: 0 1px 8px rgba(0,0,0,.9); }
+.entry-credit { margin-top: 7px; color: rgba(255,255,255,.6); font-size: 11px; text-shadow: 0 1px 5px rgba(0,0,0,.9); }
 .entry-shade { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,.05), rgba(0,0,0,.15) 60%, rgba(0,0,0,.55)); }
 /* Bascule de langue (réutilisable) */
 .lang-toggle { display: inline-flex; gap: 4px; }

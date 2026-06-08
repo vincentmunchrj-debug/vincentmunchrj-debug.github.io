@@ -73,9 +73,11 @@ export default function Login() {
       {!open && <div className="entry-hint">{t('enterHint')}</div>}
 
       {!open && (
-        <div className="entry-footer">
-          <div className="ef-author">{t('authorLine')}</div>
-          <div className="ef-copy">© 2026 RIO SELVAGEM STUDIO</div>
+        <div className="entry-bottom">
+          <div className="entry-title-big">BOLÃO DA COPA 2026</div>
+          <div className="entry-studio-big">RIO SELVAGEM STUDIO</div>
+          <div className="entry-author">{t('authorLine')}</div>
+          <div className="entry-credit">© 2026</div>
         </div>
       )}
 
