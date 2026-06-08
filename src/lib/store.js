@@ -66,7 +66,9 @@ function mapMatchRow(r) {
   }
 }
 
-async function hydrateOnline() {
+// Chargement COMPLET (joueurs + pronostics + classement). Lourd → seulement au démarrage
+// et quand on ouvre le Classement.
+async function hydrateAll() {
   const [players, matches, bets, picks, settings] = await Promise.all([
     supabase.from('players').select('*'),
     supabase.from('matches').select('*'),
@@ -103,18 +105,35 @@ async function hydrateOnline() {
   state = { ...state, ...next, online: true }
 }
 
+// Rafraîchissement LÉGER : seulement les scores des matchs + réglages (104 lignes, quasi gratuit).
+// On NE recharge PAS les pronostics de tout le monde ici — le classement ne change qu'à la fin
+// d'un match, donc on le recharge à la demande (ouverture de la page Classement).
+async function hydrateLight() {
+  const [matches, settings] = await Promise.all([
+    supabase.from('matches').select('*'),
+    supabase.from('settings').select('*').eq('id', 1).maybeSingle(),
+  ])
+  if (matches.error) throw matches.error
+  const nextMatches = (matches.data && matches.data.length)
+    ? matches.data.map(mapMatchRow).sort((a, b) => a.kickoff.localeCompare(b.kickoff))
+    : state.matches
+  state = {
+    ...state,
+    matches: nextMatches,
+    settings: {
+      championWindow: settings.data?.champion_window || state.settings.championWindow,
+      championTeamId: settings.data?.champion_team_id ?? state.settings.championTeamId,
+    },
+  }
+}
+
 let pollTimer = null
 export async function init() {
   if (hasSupabase) {
     try {
-      await hydrateOnline()
-      // Rafraîchissement périodique (robuste, simple) + realtime si dispo
-      pollTimer = setInterval(refresh, 60000) // 60 s : économise la bande passante (marge x3)
-      try {
-        supabase.channel('bolao')
-          .on('postgres_changes', { event: '*', schema: 'public' }, () => refresh())
-          .subscribe()
-      } catch { /* realtime optionnel */ }
+      await hydrateAll()
+      // Poll LÉGER toutes les 60 s (scores uniquement). Pas de realtime → trafic maîtrisé.
+      pollTimer = setInterval(refresh, 60000)
       state.ready = true; emit(); return
     } catch (e) {
       console.warn('Supabase indisponible, repli local :', e?.message || e)
@@ -124,9 +143,16 @@ export async function init() {
   emit()
 }
 
+// Poll léger (scores des matchs)
 export async function refresh() {
   if (!state.online) return
-  try { await hydrateOnline(); emit() } catch { /* garde l'état courant */ }
+  try { await hydrateLight(); emit() } catch { /* garde l'état courant */ }
+}
+
+// Rechargement complet (classement) — appelé à l'ouverture de la page Classement
+export async function refreshAll() {
+  if (!state.online) return
+  try { await hydrateAll(); emit() } catch { /* garde l'état courant */ }
 }
 
 // --- Lecture (synchrone) ---------------------------------------

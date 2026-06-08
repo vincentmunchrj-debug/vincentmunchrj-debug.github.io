@@ -1,5 +1,6 @@
+import { useEffect } from 'react'
 import { useSession } from '../App.jsx'
-import { getPlayers, getMatches, getBets, getPick, getSettings } from '../lib/store.js'
+import { getPlayers, getMatches, getBets, getPick, getSettings, refreshAll } from '../lib/store.js'
 import { tallyPlayer } from '../lib/scoring.js'
 import { teamName } from '../data/teams.js'
 import { useT } from '../i18n.js'
@@ -8,6 +9,9 @@ import Crest from '../components/Crest.jsx'
 export default function Ranking() {
   const { session } = useSession()
   const { t, lang } = useT()
+  // Le classement ne change qu'à la fin des matchs : on recharge les données fraîches
+  // à l'ouverture de cette page (au lieu de tout aspirer en boucle).
+  useEffect(() => { refreshAll() }, [])
   // Les comptes "fantômes" (pseudo commençant par "_") sont exclus du classement (tests)
   const players = getPlayers().filter((p) => !p.name.trim().startsWith('_'))
   const matches = getMatches()
