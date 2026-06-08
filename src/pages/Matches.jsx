@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSession } from '../App.jsx'
 import { getMatches, getBets, setBet } from '../lib/store.js'
 import { teamName } from '../data/teams.js'
@@ -57,6 +57,15 @@ function MatchCard({ match, bet, playerId, onSaved }) {
   const [away, setAway] = useState(bet?.away ?? '')
   const [qualifier, setQualifier] = useState(bet?.qualifier ?? null)
   const [saved, setSaved] = useState(false)
+
+  // Si le pari se (re)charge depuis le serveur (ex. après reconnexion), on met à jour
+  // l'affichage. Ne se déclenche que si les VALEURS changent → ne gêne pas la saisie.
+  useEffect(() => {
+    setHome(bet?.home ?? '')
+    setAway(bet?.away ?? '')
+    setQualifier(bet?.qualifier ?? null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bet?.home, bet?.away, bet?.qualifier])
 
   // Match à élimination : si on prédit un nul, il faut désigner le qualifié (t.a.b.)
   const isKnockout = match.phase && match.phase !== 'groups'
