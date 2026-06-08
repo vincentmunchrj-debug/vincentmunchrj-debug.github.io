@@ -8,6 +8,7 @@ import { init, subscribe, getVersion, isReady, isOnline, enterGroup, getGroup } 
 import { useT } from './i18n.js'
 import LangToggle from './components/LangToggle.jsx'
 import Splash from './components/Splash.jsx'
+import { playLaunchOnce } from './lib/audio.js'
 
 // --- Session (joueur courant), persistée en localStorage
 const SESSION_KEY = 'bolaocopa26.session'
@@ -26,6 +27,10 @@ export default function App() {
   // Démarrage : charge le global, puis le groupe de la session (défaut "Studio 1")
   useEffect(() => {
     init().then(() => { if (session) enterGroup(session.group || 'Studio 1') })
+    // Repli : si le navigateur a bloqué le son auto, on le lance au tout premier tap.
+    const onFirstTap = () => playLaunchOnce()
+    window.addEventListener('pointerdown', onFirstTap, { once: true })
+    return () => window.removeEventListener('pointerdown', onFirstTap)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

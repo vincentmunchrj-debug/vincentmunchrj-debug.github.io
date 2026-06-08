@@ -196,7 +196,8 @@ body {
 .select { width: 100%; padding: 12px; border-radius: 12px; background: var(--bg-2); color: var(--text); border: 1px solid var(--line); font-size: 15px; }
 
 /* ---------- Splash de marque (démarrage) ---------- */
-.splash { position: fixed; inset: 0; z-index: 100; background: radial-gradient(circle at 50% 40%, #161c28, #080b12 75%);
+.splash { position: fixed; inset: 0; z-index: 100;
+  background: radial-gradient(circle at 50% 40%, rgba(10,18,12,.45), rgba(6,10,14,.82) 78%), url(/img/fondintro.jpg) center/cover no-repeat;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   transition: opacity .6s ease; }
 .splash.out { opacity: 0; }
@@ -208,7 +209,7 @@ body {
 
 /* ---------- Écran d'entrée ---------- */
 .entry { position: fixed; inset: 0; overflow: hidden; }
-.entry-bg { position: absolute; inset: 0; background: url(/img/entry.jpg) center/cover no-repeat; }
+.entry-bg { position: absolute; inset: 0; background: url(/img/fond1.jpg) center/cover no-repeat; }
 .entry-bottom { position: absolute; bottom: calc(env(safe-area-inset-bottom, 0px) + 26px); left: 0; right: 0;
   text-align: center; z-index: 4; pointer-events: none; padding: 0 14px; }
 .entry-title-big { font-size: clamp(24px, 7.6vw, 40px); font-weight: 900; line-height: 1; letter-spacing: .5px;
