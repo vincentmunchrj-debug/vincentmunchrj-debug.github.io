@@ -195,6 +195,18 @@ body {
 .label { font-size: 13px; color: var(--muted); margin-bottom: 6px; display: block; }
 .select { width: 100%; padding: 12px; border-radius: 12px; background: var(--bg-2); color: var(--text); border: 1px solid var(--line); font-size: 15px; }
 
+/* ---------- Splash de marque (démarrage) ---------- */
+.splash { position: fixed; inset: 0; z-index: 100; background: radial-gradient(circle at 50% 40%, #161c28, #080b12 75%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  transition: opacity .6s ease; }
+.splash.out { opacity: 0; }
+.splash-logo { width: 210px; max-width: 56%; height: auto; filter: drop-shadow(0 6px 30px rgba(255,255,255,.18));
+  animation: splashIn .9s ease both; }
+@keyframes splashIn { from { opacity: 0; transform: scale(.92); } to { opacity: 1; transform: scale(1); } }
+.splash-author { margin-top: 20px; color: #fff; font-size: 16px; font-weight: 600; }
+.splash-studio { color: #cfd6e2; font-size: 15px; font-weight: 200; letter-spacing: 5px; text-indent: 5px; margin-top: 6px; }
+.splash-copy { color: rgba(255,255,255,.45); font-size: 12px; margin-top: 10px; }
+
 /* ---------- Écran d'entrée ---------- */
 .entry { position: fixed; inset: 0; overflow: hidden; }
 .entry-bg { position: absolute; inset: 0; background: url(/img/entry.jpg) center/cover no-repeat; }

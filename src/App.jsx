@@ -7,6 +7,7 @@ import Ranking from './pages/Ranking.jsx'
 import { init, subscribe, getVersion, isReady, isOnline } from './lib/store.js'
 import { useT } from './i18n.js'
 import LangToggle from './components/LangToggle.jsx'
+import Splash from './components/Splash.jsx'
 
 // --- Session (joueur courant), persistée en localStorage
 const SESSION_KEY = 'bolaocopa26.session'
@@ -21,9 +22,7 @@ export default function App() {
   const [session, setSession] = useState(() => {
     try { return JSON.parse(localStorage.getItem(SESSION_KEY)) } catch { return null }
   })
-
-  if (!isReady()) return <Loading />
-
+  const [splash, setSplash] = useState(true)
 
   const login = (player) => {
     localStorage.setItem(SESSION_KEY, JSON.stringify(player))
@@ -35,22 +34,27 @@ export default function App() {
   }
 
   return (
-    <SessionCtx.Provider value={{ session, login, logout }}>
-      <div className="app">
-        {session && <PageBg />}
-        {session && <Header />}
-        <div className="content">
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/" element={<Guard><Matches /></Guard>} />
-            <Route path="/champion" element={<Guard><Champion /></Guard>} />
-            <Route path="/ranking" element={<Guard><Ranking /></Guard>} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </div>
-        {session && <BottomNav />}
-      </div>
-    </SessionCtx.Provider>
+    <>
+      {splash && <Splash onDone={() => setSplash(false)} />}
+      {!isReady() ? <Loading /> : (
+        <SessionCtx.Provider value={{ session, login, logout }}>
+          <div className="app">
+            {session && <PageBg />}
+            {session && <Header />}
+            <div className="content">
+              <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route path="/" element={<Guard><Matches /></Guard>} />
+                <Route path="/champion" element={<Guard><Champion /></Guard>} />
+                <Route path="/ranking" element={<Guard><Ranking /></Guard>} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </div>
+            {session && <BottomNav />}
+          </div>
+        </SessionCtx.Provider>
+      )}
+    </>
   )
 }
 
