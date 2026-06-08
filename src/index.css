@@ -217,7 +217,7 @@ body {
   background: linear-gradient(180deg, #ffe9a8 0%, #f6b026 52%, #de8200 100%);
   -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent;
   filter: drop-shadow(0 2px 8px rgba(0,0,0,.75)); }
-.entry-studio-big { margin-top: 8px; color: #fff; font-size: 13px; font-weight: 300; letter-spacing: 4px;
+.entry-studio-big { margin-top: 62px; color: #fff; font-size: 13px; font-weight: 300; letter-spacing: 4px;
   text-indent: 4px; text-shadow: 0 1px 8px rgba(0,0,0,.9); }
 .entry-author { margin-top: 14px; color: #fff; font-size: 13px; font-weight: 600; text-shadow: 0 1px 8px rgba(0,0,0,.9); }
 .entry-credit { margin-top: 10px; color: rgba(255,255,255,.55); font-size: 10px; text-shadow: 0 1px 5px rgba(0,0,0,.9); }
@@ -230,6 +230,7 @@ body {
 
 .entry-lang { position: absolute; top: calc(env(safe-area-inset-top, 0px) + 16px); right: 16px; z-index: 5; display: flex; align-items: center; gap: 8px; }
 .sound-btn { font-size: 26px; line-height: 1; background: rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.3); border-radius: 12px; padding: 6px 10px; cursor: pointer; }
+.header-right .sound-btn { font-size: 16px; padding: 4px 7px; border-radius: 8px; background: rgba(0,0,0,.25); }
 .entry-cup { position: absolute; inset: 0; background: none; border: none; padding: 0; cursor: pointer; z-index: 3; }
 .entry-cup img { width: 100%; height: 100%; object-fit: cover; animation: cupGlow 2.2s ease-in-out infinite; }
 @keyframes cupGlow {

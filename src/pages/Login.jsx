@@ -4,6 +4,7 @@ import { useSession } from '../App.jsx'
 import { loginOrRegister, createGroup } from '../lib/store.js'
 import { useT } from '../i18n.js'
 import LangToggle from '../components/LangToggle.jsx'
+import SoundButton from '../components/SoundButton.jsx'
 
 const DEFAULT_GROUP = 'Studio 1'
 
@@ -63,7 +64,7 @@ export default function Login() {
       <div className="entry-bg" />
       <div className="entry-shade" />
 
-      <div className="entry-lang"><LangToggle variant="lg" /></div>
+      <div className="entry-lang"><SoundButton /><LangToggle variant="lg" /></div>
 
       {!open && (
         <button className="entry-cup" onClick={() => setOpen(true)} aria-label={t('enter')}>

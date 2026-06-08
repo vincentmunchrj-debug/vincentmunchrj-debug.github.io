@@ -7,6 +7,7 @@ import Ranking from './pages/Ranking.jsx'
 import { init, subscribe, getVersion, isReady, isOnline, enterGroup, getGroup } from './lib/store.js'
 import { useT } from './i18n.js'
 import LangToggle from './components/LangToggle.jsx'
+import SoundButton from './components/SoundButton.jsx'
 import Splash from './components/Splash.jsx'
 import { playLaunchOnce } from './lib/audio.js'
 
@@ -107,6 +108,7 @@ function Header() {
         <div className="sub">{getGroup() || t('subtitle')} · {isOnline() ? '🟢 ' + t('online') : '🟡 ' + t('local')}</div>
       </div>
       <div className="header-right">
+        <SoundButton />
         <LangToggle />
         <button className="me" onClick={() => { logout(); navigate('/login') }}>
           {session.name} · {t('logout')}
