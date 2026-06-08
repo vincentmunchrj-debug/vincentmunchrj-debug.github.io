@@ -4,7 +4,7 @@ import Login from './pages/Login.jsx'
 import Matches from './pages/Matches.jsx'
 import Champion from './pages/Champion.jsx'
 import Ranking from './pages/Ranking.jsx'
-import { init, subscribe, getVersion, isReady, isOnline } from './lib/store.js'
+import { init, subscribe, getVersion, isReady, isOnline, enterGroup, getGroup } from './lib/store.js'
 import { useT } from './i18n.js'
 import LangToggle from './components/LangToggle.jsx'
 import Splash from './components/Splash.jsx'
@@ -17,16 +17,22 @@ export const useSession = () => useContext(SessionCtx)
 export default function App() {
   // Re-render à chaque changement de données (local ou venant des autres amis)
   useSyncExternalStore(subscribe, getVersion)
-  useEffect(() => { init() }, [])
 
   const [session, setSession] = useState(() => {
     try { return JSON.parse(localStorage.getItem(SESSION_KEY)) } catch { return null }
   })
   const [splash, setSplash] = useState(true)
 
+  // Démarrage : charge le global, puis le groupe de la session (défaut "Studio 1")
+  useEffect(() => {
+    init().then(() => { if (session) enterGroup(session.group || 'Studio 1') })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const login = (player) => {
     localStorage.setItem(SESSION_KEY, JSON.stringify(player))
     setSession(player)
+    enterGroup(player.group || 'Studio 1')
   }
   const logout = () => {
     localStorage.removeItem(SESSION_KEY)
@@ -93,7 +99,7 @@ function Header() {
       <img className="logo-img" src="/img/minicopa.png" alt="" />
       <div>
         <h1>BolãoCopa26</h1>
-        <div className="sub">{t('subtitle')} · {isOnline() ? '🟢 ' + t('online') : '🟡 ' + t('local')}</div>
+        <div className="sub">{getGroup() || t('subtitle')} · {isOnline() ? '🟢 ' + t('online') : '🟡 ' + t('local')}</div>
       </div>
       <div className="header-right">
         <LangToggle />

@@ -66,44 +66,46 @@ function mapMatchRow(r) {
   }
 }
 
-// Chargement COMPLET (joueurs + pronostics + classement). Lourd → seulement au démarrage
-// et quand on ouvre le Classement.
-async function hydrateAll() {
-  const [players, matches, bets, picks, settings] = await Promise.all([
-    supabase.from('players').select('id, name'), // jamais le pin_hash côté client
-
+// Données GLOBALES (matchs + réglages) — communes à TOUS les groupes.
+async function hydrateGlobal() {
+  const [matches, settings] = await Promise.all([
     supabase.from('matches').select('*'),
-    supabase.from('bets').select('*'),
-    supabase.from('champion_picks').select('*'),
     supabase.from('settings').select('*').eq('id', 1).maybeSingle(),
   ])
-  if (players.error || matches.error || bets.error || picks.error) {
-    throw players.error || matches.error || bets.error || picks.error
-  }
-
-  const next = {
-    players: players.data || [],
-    matches: (matches.data && matches.data.length)
-      ? matches.data.map(mapMatchRow).sort((a, b) => a.kickoff.localeCompare(b.kickoff))
-      : MATCHES_2026.map((m) => ({ ...m })), // calendrier de secours si pas encore importé
-    bets: {},
-    picks: {},
+  if (matches.error) throw matches.error
+  const nextMatches = (matches.data && matches.data.length)
+    ? matches.data.map(mapMatchRow).sort((a, b) => a.kickoff.localeCompare(b.kickoff))
+    : MATCHES_2026.map((m) => ({ ...m }))
+  state = {
+    ...state,
+    matches: nextMatches,
     settings: {
       championWindow: settings.data?.champion_window || 'initial',
       championTeamId: settings.data?.champion_team_id || null,
     },
+    online: true,
   }
+}
+
+// Données du GROUPE courant uniquement (joueurs + pronostics du groupe).
+async function loadGroupData(g) {
+  if (!g) { state = { ...state, players: [], bets: {}, picks: {} }; return }
+  const [players, bets, picks] = await Promise.all([
+    supabase.from('players').select('id, name').eq('group_code', g),
+    supabase.from('bets').select('*').eq('group_code', g),
+    supabase.from('champion_picks').select('*').eq('group_code', g),
+  ])
+  if (players.error) throw players.error
+  const nextBets = {}
+  const nextPicks = {}
   for (const b of bets.data || []) {
-    if (!next.bets[b.player_id]) next.bets[b.player_id] = {}
-    next.bets[b.player_id][b.match_id] = { home: b.pred_home, away: b.pred_away, qualifier: b.pred_winner ?? null }
+    if (!nextBets[b.player_id]) nextBets[b.player_id] = {}
+    nextBets[b.player_id][b.match_id] = { home: b.pred_home, away: b.pred_away, qualifier: b.pred_winner ?? null }
   }
   for (const p of picks.data || []) {
-    next.picks[p.player_id] = {
-      teams: [p.team1, p.team2, p.team3].filter(Boolean),
-      window: p.pick_window || 'initial',
-    }
+    nextPicks[p.player_id] = { teams: [p.team1, p.team2, p.team3].filter(Boolean), window: p.pick_window || 'initial' }
   }
-  state = { ...state, ...next, online: true }
+  state = { ...state, players: players.data || [], bets: nextBets, picks: nextPicks }
 }
 
 // Rafraîchissement LÉGER : seulement les scores des matchs + réglages (104 lignes, quasi gratuit).
@@ -132,8 +134,7 @@ let pollTimer = null
 export async function init() {
   if (hasSupabase) {
     try {
-      await hydrateAll()
-      // Poll LÉGER toutes les 60 s (scores uniquement). Pas de realtime → trafic maîtrisé.
+      await hydrateGlobal() // matchs + réglages (le groupe se charge à la connexion)
       pollTimer = setInterval(refresh, 60000)
       state.ready = true; emit(); return
     } catch (e) {
@@ -150,10 +151,25 @@ export async function refresh() {
   try { await hydrateLight(); emit() } catch { /* garde l'état courant */ }
 }
 
-// Rechargement complet (classement) — appelé à l'ouverture de la page Classement
+// Rechargement complet (scores + données du groupe) — à l'ouverture du Classement
 export async function refreshAll() {
   if (!state.online) return
-  try { await hydrateAll(); emit() } catch { /* garde l'état courant */ }
+  try { await Promise.all([hydrateLight(), loadGroupData(state.group)]); emit() } catch { /* garde l'état */ }
+}
+
+// --- Groupe courant -------------------------------------------
+export function getGroup() { return state.group || null }
+export async function enterGroup(g) {
+  state.group = g
+  if (!state.online) { emit(); return }
+  try { await loadGroupData(g) } catch { /* ignore */ }
+  emit()
+}
+export async function createGroup() {
+  if (!state.online) return 'Studio 1'
+  const { data, error } = await supabase.rpc('create_group')
+  if (error) { console.warn('create_group:', error.message); return null }
+  return data // code "Studio NNNN"
 }
 
 // --- Lecture (synchrone) ---------------------------------------
@@ -185,25 +201,20 @@ export function addPlayer(name) {
 
 // Connexion / création / réservation avec code (PIN), vérifié côté serveur.
 // Retour : { status, id?, name? }  status ∈ created | claimed | ok | wrong | invalid | error
-export async function loginOrRegister(name, pin) {
+export async function loginOrRegister(group, name, pin) {
   const n = (name || '').trim()
+  const g = (group || '').trim()
   if (!state.online) {
-    // Mode local (démo) : pas de backend, on simule sans code
     let p = findPlayerByName(n)
     if (!p) p = { id: addPlayer(n), name: n }
     return { status: 'ok', id: p.id, name: n }
   }
-  const { data, error } = await supabase.rpc('login_or_register', { p_name: n, p_pin: pin })
+  const { data, error } = await supabase.rpc('login_or_register', { p_group: g, p_name: n, p_pin: pin })
   if (error) { console.warn('login rpc:', error.message); return { status: 'error' } }
   const row = Array.isArray(data) ? data[0] : data
   if (!row) return { status: 'error' }
-  if (row.id) {
-    if (!state.players.find((x) => x.id === row.id)) {
-      state.players = [...state.players, { id: row.id, name: n }]; emit()
-    }
-    return { status: row.status, id: row.id, name: n }
-  }
-  return { status: row.status } // 'wrong' | 'invalid'
+  if (row.id) return { status: row.status, id: row.id, name: n }
+  return { status: row.status } // 'wrong' | 'invalid' | 'nogroup'
 }
 
 // --- Pronostics de match ---------------------------------------
@@ -223,7 +234,7 @@ export function setBet(playerId, matchId, pred) {
   emit(); saveLocal()
   if (state.online) {
     supabase.from('bets').upsert({
-      player_id: playerId, match_id: matchId,
+      player_id: playerId, match_id: matchId, group_code: state.group,
       pred_home: pred.home, pred_away: pred.away, pred_winner: pred.qualifier ?? null, updated_at: new Date().toISOString(),
     }).then(({ error }) => { if (error) console.warn('upsert bet:', error.message) })
   }
@@ -236,7 +247,7 @@ export function setPick(playerId, teams, windowName) {
   emit(); saveLocal()
   if (state.online) {
     supabase.from('champion_picks').upsert({
-      player_id: playerId, team1: teams[0] || null, team2: teams[1] || null,
+      player_id: playerId, group_code: state.group, team1: teams[0] || null, team2: teams[1] || null,
       team3: teams[2] || null, pick_window: windowName, updated_at: new Date().toISOString(),
     }).then(({ error }) => { if (error) console.warn('upsert pick:', error.message) })
   }
