@@ -68,12 +68,28 @@ alter table bets enable row level security;
 alter table champion_picks enable row level security;
 alter table settings enable row level security;
 
+-- Accès ouverts pour toutes les tables SAUF bets (qui a un verrou spécifique)
 do $$
 declare t text;
 begin
-  foreach t in array array['players','teams','matches','bets','champion_picks','settings']
+  foreach t in array array['players','teams','matches','champion_picks','settings']
   loop
     execute format('drop policy if exists p_all on %I;', t);
     execute format('create policy p_all on %I for all using (true) with check (true);', t);
   end loop;
 end $$;
+
+-- ------------------------------------------------------------
+--  VERROU des pronostics : un prono n'est accepté QUE si le match
+--  n'a pas commencé (heure du serveur). Inviolable côté client.
+-- ------------------------------------------------------------
+drop policy if exists p_all on bets;
+drop policy if exists bets_read on bets;
+drop policy if exists bets_insert on bets;
+drop policy if exists bets_update on bets;
+create policy bets_read on bets for select using (true);
+create policy bets_insert on bets for insert
+  with check (exists (select 1 from matches m where m.id = match_id and m.kickoff > now()));
+create policy bets_update on bets for update
+  using      (exists (select 1 from matches m where m.id = match_id and m.kickoff > now()))
+  with check (exists (select 1 from matches m where m.id = match_id and m.kickoff > now()));
