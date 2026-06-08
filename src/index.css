@@ -234,4 +234,6 @@ body {
 .entry-card .input { background: rgba(255, 255, 255, .85); color: #122038; border-color: rgba(0, 0, 0, .15); }
 @keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 .entry-logo img { height: 60px; }
+.entry-error { color: #ffd0cc; background: rgba(180,40,40,.35); border: 1px solid rgba(224,82,75,.6);
+  font-size: 13px; font-weight: 600; padding: 8px 10px; border-radius: 10px; margin: 12px 0 0; }
 .entry-title { margin: 6px 0 2px; font-size: 24px; font-weight: 800; }

@@ -70,7 +70,8 @@ function mapMatchRow(r) {
 // et quand on ouvre le Classement.
 async function hydrateAll() {
   const [players, matches, bets, picks, settings] = await Promise.all([
-    supabase.from('players').select('*'),
+    supabase.from('players').select('id, name'), // jamais le pin_hash côté client
+
     supabase.from('matches').select('*'),
     supabase.from('bets').select('*'),
     supabase.from('champion_picks').select('*'),
@@ -180,6 +181,29 @@ export function addPlayer(name) {
     })
   }
   return id
+}
+
+// Connexion / création / réservation avec code (PIN), vérifié côté serveur.
+// Retour : { status, id?, name? }  status ∈ created | claimed | ok | wrong | invalid | error
+export async function loginOrRegister(name, pin) {
+  const n = (name || '').trim()
+  if (!state.online) {
+    // Mode local (démo) : pas de backend, on simule sans code
+    let p = findPlayerByName(n)
+    if (!p) p = { id: addPlayer(n), name: n }
+    return { status: 'ok', id: p.id, name: n }
+  }
+  const { data, error } = await supabase.rpc('login_or_register', { p_name: n, p_pin: pin })
+  if (error) { console.warn('login rpc:', error.message); return { status: 'error' } }
+  const row = Array.isArray(data) ? data[0] : data
+  if (!row) return { status: 'error' }
+  if (row.id) {
+    if (!state.players.find((x) => x.id === row.id)) {
+      state.players = [...state.players, { id: row.id, name: n }]; emit()
+    }
+    return { status: row.status, id: row.id, name: n }
+  }
+  return { status: row.status } // 'wrong' | 'invalid'
 }
 
 // --- Pronostics de match ---------------------------------------
