@@ -234,7 +234,7 @@ export function setBet(playerId, matchId, pred) {
   emit(); saveLocal()
   if (state.online) {
     supabase.from('bets').upsert({
-      player_id: playerId, match_id: matchId, group_code: state.group,
+      player_id: playerId, match_id: matchId, group_code: state.group || 'Studio 1',
       pred_home: pred.home, pred_away: pred.away, pred_winner: pred.qualifier ?? null, updated_at: new Date().toISOString(),
     }).then(({ error }) => { if (error) console.warn('upsert bet:', error.message) })
   }
@@ -247,7 +247,7 @@ export function setPick(playerId, teams, windowName) {
   emit(); saveLocal()
   if (state.online) {
     supabase.from('champion_picks').upsert({
-      player_id: playerId, group_code: state.group, team1: teams[0] || null, team2: teams[1] || null,
+      player_id: playerId, group_code: state.group || 'Studio 1', team1: teams[0] || null, team2: teams[1] || null,
       team3: teams[2] || null, pick_window: windowName, updated_at: new Date().toISOString(),
     }).then(({ error }) => { if (error) console.warn('upsert pick:', error.message) })
   }
