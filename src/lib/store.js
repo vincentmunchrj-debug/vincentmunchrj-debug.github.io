@@ -109,7 +109,7 @@ export async function init() {
     try {
       await hydrateOnline()
       // Rafraîchissement périodique (robuste, simple) + realtime si dispo
-      pollTimer = setInterval(refresh, 20000)
+      pollTimer = setInterval(refresh, 60000) // 60 s : économise la bande passante (marge x3)
       try {
         supabase.channel('bolao')
           .on('postgres_changes', { event: '*', schema: 'public' }, () => refresh())
