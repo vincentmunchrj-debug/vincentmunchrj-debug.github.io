@@ -156,7 +156,17 @@ export function addPlayer(name) {
 }
 
 // --- Pronostics de match ---------------------------------------
+// Verrou : un match est bloqué dès l'heure du coup d'envoi.
+export function isMatchLocked(matchId) {
+  const m = state.matches.find((x) => x.id === matchId)
+  return !!m && new Date(m.kickoff).getTime() <= Date.now()
+}
 export function setBet(playerId, matchId, pred) {
+  // Refus si le match a déjà commencé — impossible de modifier après le coup d'envoi
+  if (isMatchLocked(matchId)) {
+    console.warn('Pari refusé : le match a déjà commencé.', matchId)
+    return false
+  }
   if (!state.bets[playerId]) state.bets[playerId] = {}
   state.bets[playerId] = { ...state.bets[playerId], [matchId]: pred }
   emit(); saveLocal()
@@ -166,6 +176,7 @@ export function setBet(playerId, matchId, pred) {
       pred_home: pred.home, pred_away: pred.away, updated_at: new Date().toISOString(),
     }).then(({ error }) => { if (error) console.warn('upsert bet:', error.message) })
   }
+  return true
 }
 
 // --- Pronostic champion ----------------------------------------
