@@ -116,6 +116,14 @@ body {
   box-shadow: 0 6px 20px rgba(0, 0, 0, .4);
 }
 .locked-badge { font-size: 11px; padding: 3px 8px; border-radius: 999px; background: var(--card-2); color: var(--muted); }
+
+/* Choix du qualifié (matchs à élimination, en cas de nul) */
+.qualifier { margin-top: 12px; }
+.qualifier-q { font-size: 13px; color: #5b6b86; text-align: center; margin-bottom: 8px; font-weight: 700; }
+.qualifier-opts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.qual-opt { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 6px;
+  border-radius: 12px; background: #fff; border: 2px solid #ccd5e4; color: #16233f; font-size: 12px; font-weight: 700; cursor: pointer; }
+.qual-opt.sel { border-color: var(--yellow); background: #fff7d6; }
 .result-badge { font-size: 12px; font-weight: 700; }
 .pts-pill { font-size: 12px; font-weight: 800; padding: 4px 10px; border-radius: 999px; background: var(--green); }
 .pts-pill.zero { background: #3a2730; color: #f1b0ab; }

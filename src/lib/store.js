@@ -60,6 +60,7 @@ function mapMatchRow(r) {
   return {
     id: r.id, phase: r.phase, group: r.grp, kickoff: r.kickoff,
     home: r.home, away: r.away,
+    winner: r.winner ?? null, // équipe qualifiée (élimination)
     actual: r.actual_home != null && r.actual_away != null
       ? { home: r.actual_home, away: r.actual_away } : null,
   }
@@ -91,7 +92,7 @@ async function hydrateOnline() {
   }
   for (const b of bets.data || []) {
     if (!next.bets[b.player_id]) next.bets[b.player_id] = {}
-    next.bets[b.player_id][b.match_id] = { home: b.pred_home, away: b.pred_away }
+    next.bets[b.player_id][b.match_id] = { home: b.pred_home, away: b.pred_away, qualifier: b.pred_winner ?? null }
   }
   for (const p of picks.data || []) {
     next.picks[p.player_id] = {
@@ -173,7 +174,7 @@ export function setBet(playerId, matchId, pred) {
   if (state.online) {
     supabase.from('bets').upsert({
       player_id: playerId, match_id: matchId,
-      pred_home: pred.home, pred_away: pred.away, updated_at: new Date().toISOString(),
+      pred_home: pred.home, pred_away: pred.away, pred_winner: pred.qualifier ?? null, updated_at: new Date().toISOString(),
     }).then(({ error }) => { if (error) console.warn('upsert bet:', error.message) })
   }
   return true

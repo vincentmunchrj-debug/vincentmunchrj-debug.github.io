@@ -26,28 +26,45 @@ function outcome(home, away) {
 //   - + score exact                 -> +1 pt
 //   => maximum 4 pts
 //
+//  ctx (matchs à élimination) = { homeId, awayId, realWinner }
+//   - realWinner : équipe réellement qualifiée (vainqueur aux t.a.b. en cas de nul). null sinon.
+//   - pred.qualifier : équipe que le joueur désigne comme qualifiée s'il prédit un nul.
+//
+//  Le « vainqueur » (2 pts) = bonne équipe qualifiée (pour un match à élimination,
+//  le qualifié aux tirs au but). La diff et le score exact se calculent sur le score
+//  (même sens requis) — et restent acquis même si le qualifié est faux sur un nul.
+//
 //  Retour : { points, gotWinner, gotDiff, gotExact }
-export function scoreMatch(pred, actual) {
+function winnerOf(h, a, homeId, awayId, drawWinner) {
+  if (h > a) return homeId
+  if (a > h) return awayId
+  return drawWinner ?? null // nul : qualifié (élimination) ou null (groupe)
+}
+
+export function scoreMatch(pred, actual, ctx = {}) {
   const empty = { points: 0, gotWinner: false, gotDiff: false, gotExact: false }
   if (!pred || !actual) return empty
   if (pred.home == null || pred.away == null) return empty
   if (actual.home == null || actual.away == null) return empty
 
-  // 1) Le bon vainqueur est OBLIGATOIRE. Sinon 0, quoi qu'il arrive.
-  if (outcome(pred.home, pred.away) !== outcome(actual.home, actual.away)) {
-    return empty
+  const { homeId, awayId, realWinner = null } = ctx
+  const predWinner = winnerOf(pred.home, pred.away, homeId, awayId, pred.qualifier ?? null)
+  const realWin = winnerOf(actual.home, actual.away, homeId, awayId, realWinner)
+
+  let points = 0
+  // 1) Bon vainqueur / qualifié (inclut le nul de groupe : null === null)
+  const gotWinner = predWinner === realWin
+  if (gotWinner) points += 2
+
+  // 2 & 3) Diff et score exact : seulement si le score va dans le même sens
+  let gotDiff = false
+  let gotExact = false
+  if (outcome(pred.home, pred.away) === outcome(actual.home, actual.away)) {
+    gotDiff = (pred.home - pred.away) === (actual.home - actual.away)
+    if (gotDiff) points += 1
+    gotExact = pred.home === actual.home && pred.away === actual.away
+    if (gotExact) points += 1
   }
-
-  let points = 2 // bon vainqueur / nul
-  const gotWinner = true
-
-  // 2) Bonne différence de buts (dans le bon sens — garanti car même vainqueur)
-  const gotDiff = (pred.home - pred.away) === (actual.home - actual.away)
-  if (gotDiff) points += 1
-
-  // 3) Score exact
-  const gotExact = pred.home === actual.home && pred.away === actual.away
-  if (gotExact) points += 1
 
   return { points, gotWinner, gotDiff, gotExact }
 }
@@ -101,7 +118,7 @@ export function tallyPlayer(bets, matches, pick, championTeamId) {
   for (const bet of bets || []) {
     const m = byId.get(bet.matchId)
     if (!m || !m.actual) continue
-    const r = scoreMatch(bet.pred, m.actual)
+    const r = scoreMatch(bet.pred, m.actual, { homeId: m.home, awayId: m.away, realWinner: m.winner })
     matchPoints += r.points
     detail.push({ matchId: bet.matchId, ...r })
   }

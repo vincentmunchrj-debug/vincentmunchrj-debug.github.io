@@ -49,6 +49,12 @@ async function importMatches() {
     const score = m.score?.fullTime || {}
     const home = m.homeTeam?.tla
     const away = m.awayTeam?.tla
+    // Vrai qualifié (vainqueur aux t.a.b. inclus) — utile pour les matchs à élimination
+    let winner = null
+    if (m.status === 'FINISHED') {
+      if (m.score?.winner === 'HOME_TEAM') winner = home
+      else if (m.score?.winner === 'AWAY_TEAM') winner = away
+    }
     return {
       id: 'wc' + m.id,
       phase: PHASE[m.stage] || m.stage.toLowerCase(),
@@ -58,6 +64,7 @@ async function importMatches() {
       away: teamIds.has(away) ? away : null,
       actual_home: m.status === 'FINISHED' ? score.home : null,
       actual_away: m.status === 'FINISHED' ? score.away : null,
+      winner: (winner && teamIds.has(winner)) ? winner : null,
     }
   })
   const { error } = await sb.from('matches').upsert(rows)

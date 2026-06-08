@@ -55,16 +55,28 @@ function MatchCard({ match, bet, playerId, onSaved }) {
   const played = !!match.actual
   const [home, setHome] = useState(bet?.home ?? '')
   const [away, setAway] = useState(bet?.away ?? '')
+  const [qualifier, setQualifier] = useState(bet?.qualifier ?? null)
   const [saved, setSaved] = useState(false)
 
-  const canSave = !locked && home !== '' && away !== ''
+  // Match à élimination : si on prédit un nul, il faut désigner le qualifié (t.a.b.)
+  const isKnockout = match.phase && match.phase !== 'groups'
+  const isDraw = home !== '' && away !== '' && Number(home) === Number(away)
+  const needsQualifier = isKnockout && isDraw
+
+  const canSave = !locked && home !== '' && away !== '' &&
+    (!needsQualifier || qualifier === match.home || qualifier === match.away)
   const onSave = () => {
-    setBet(playerId, match.id, { home: Number(home), away: Number(away) })
+    setBet(playerId, match.id, {
+      home: Number(home), away: Number(away),
+      qualifier: needsQualifier ? qualifier : null,
+    })
     setSaved(true); setTimeout(() => setSaved(false), 1500); onSaved && onSaved()
   }
 
   let result = null
-  if (played && bet) result = scoreMatch(bet, match.actual)
+  if (played && bet) {
+    result = scoreMatch(bet, match.actual, { homeId: match.home, awayId: match.away, realWinner: match.winner })
+  }
 
   const d = new Date(match.kickoff)
   const dateStr = d.toLocaleString(lang === 'fr' ? 'fr-FR' : 'pt-BR',
@@ -100,6 +112,22 @@ function MatchCard({ match, bet, playerId, onSaved }) {
         <span className="vs">×</span>
         <Stepper value={away} onChange={setAway} disabled={locked} />
       </div>
+
+      {!locked && needsQualifier && (
+        <div className="qualifier">
+          <div className="qualifier-q">{t('whoQualifies')}</div>
+          <div className="qualifier-opts">
+            <button type="button" className={'qual-opt' + (qualifier === match.home ? ' sel' : '')}
+              onClick={() => setQualifier(match.home)}>
+              <Crest id={match.home} size={22} /> <span>{teamName(match.home, lang)}</span>
+            </button>
+            <button type="button" className={'qual-opt' + (qualifier === match.away ? ' sel' : '')}
+              onClick={() => setQualifier(match.away)}>
+              <Crest id={match.away} size={22} /> <span>{teamName(match.away, lang)}</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {!locked && (
         <button className="btn" style={{ marginTop: 12 }} onClick={onSave} disabled={!canSave}>

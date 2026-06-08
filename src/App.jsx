@@ -14,6 +14,10 @@ const SESSION_KEY = 'bolaocopa26.session'
 const SessionCtx = createContext(null)
 export const useSession = () => useContext(SessionCtx)
 
+// --- Accès Admin : débloqué uniquement via un lien secret ?admin=<code>
+const ADMIN_CODE = import.meta.env.VITE_ADMIN_CODE || ''
+const ADMIN_KEY = 'bolaocopa26.admin'
+
 export default function App() {
   // Re-render à chaque changement de données (local ou venant des autres amis)
   useSyncExternalStore(subscribe, getVersion)
@@ -22,6 +26,22 @@ export default function App() {
   const [session, setSession] = useState(() => {
     try { return JSON.parse(localStorage.getItem(SESSION_KEY)) } catch { return null }
   })
+
+  // Mode admin (lien secret ?admin=<code>) — mémorisé sur cet appareil
+  const [admin, setAdmin] = useState(() => {
+    try { return localStorage.getItem(ADMIN_KEY) === '1' } catch { return false }
+  })
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search).get('admin')
+    if (p == null) return
+    if (ADMIN_CODE && p === ADMIN_CODE) { localStorage.setItem(ADMIN_KEY, '1'); setAdmin(true) }
+    else if (p === 'off') { localStorage.removeItem(ADMIN_KEY); setAdmin(false) }
+    try {
+      const url = new URL(window.location.href)
+      url.searchParams.delete('admin')
+      window.history.replaceState({}, '', url)
+    } catch { /* ignore */ }
+  }, [])
 
   if (!isReady()) return <Loading />
 
@@ -46,11 +66,11 @@ export default function App() {
             <Route path="/" element={<Guard><Matches /></Guard>} />
             <Route path="/champion" element={<Guard><Champion /></Guard>} />
             <Route path="/ranking" element={<Guard><Ranking /></Guard>} />
-            <Route path="/admin" element={<Guard><Admin /></Guard>} />
+            <Route path="/admin" element={admin ? <Guard><Admin /></Guard> : <Navigate to="/" replace />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>
-        {session && <BottomNav />}
+        {session && <BottomNav admin={admin} />}
       </div>
     </SessionCtx.Provider>
   )
@@ -103,14 +123,14 @@ function Header() {
   )
 }
 
-function BottomNav() {
+function BottomNav({ admin }) {
   const { t } = useT()
   return (
-    <nav className="bottom-nav">
+    <nav className="bottom-nav" style={{ gridTemplateColumns: `repeat(${admin ? 4 : 3}, 1fr)` }}>
       <NavLink to="/" end><span className="ic">⚽</span>{t('navMatches')}</NavLink>
       <NavLink to="/champion"><span className="ic">👑</span>{t('navChampion')}</NavLink>
       <NavLink to="/ranking"><span className="ic">📊</span>{t('navRanking')}</NavLink>
-      <NavLink to="/admin"><span className="ic">⚙️</span>{t('navAdmin')}</NavLink>
+      {admin && <NavLink to="/admin"><span className="ic">⚙️</span>{t('navAdmin')}</NavLink>}
     </nav>
   )
 }
