@@ -9,16 +9,19 @@ import { readFileSync } from 'node:fs'
 import { createClient } from '@supabase/supabase-js'
 import { TEAMS } from '../src/data/teams.js'
 
-// --- Lecture du .env (simple)
+// --- Clés : priorité aux variables d'environnement (GitHub Actions),
+//     sinon repli sur le fichier .env local (développement)
 const env = {}
-for (const line of readFileSync(new URL('../.env', import.meta.url), 'utf8').split('\n')) {
-  const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/)
-  if (m) env[m[1]] = m[2]
-}
-const URL_ = env.VITE_SUPABASE_URL
-const KEY = env.VITE_SUPABASE_ANON_KEY
-const FD = env.VITE_FOOTBALL_DATA_KEY
-if (!URL_ || !KEY) { console.error('❌ Clés Supabase manquantes dans .env'); process.exit(1) }
+try {
+  for (const line of readFileSync(new URL('../.env', import.meta.url), 'utf8').split('\n')) {
+    const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/)
+    if (m) env[m[1]] = m[2]
+  }
+} catch { /* pas de .env en CI, on utilise process.env */ }
+const URL_ = process.env.VITE_SUPABASE_URL || env.VITE_SUPABASE_URL
+const KEY = process.env.VITE_SUPABASE_ANON_KEY || env.VITE_SUPABASE_ANON_KEY
+const FD = process.env.VITE_FOOTBALL_DATA_KEY || env.VITE_FOOTBALL_DATA_KEY
+if (!URL_ || !KEY) { console.error('❌ Clés Supabase manquantes (.env ou variables d\'environnement)'); process.exit(1) }
 
 const sb = createClient(URL_, KEY)
 

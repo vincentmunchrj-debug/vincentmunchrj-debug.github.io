@@ -9,7 +9,10 @@ export default function Login() {
   const { session, login } = useSession()
   const { t } = useT()
   const [open, setOpen] = useState(false)
-  const [name, setName] = useState('')
+  // Pré-remplit avec le dernier pseudo utilisé (mémorisé sur l'appareil)
+  const [name, setName] = useState(() => {
+    try { return localStorage.getItem('bolaocopa26.lastname') || '' } catch { return '' }
+  })
   const navigate = useNavigate()
 
   if (session) return <Navigate to="/" replace />
@@ -19,6 +22,7 @@ export default function Login() {
   const entrar = () => {
     const n = name.trim()
     if (!n) return
+    try { localStorage.setItem('bolaocopa26.lastname', n) } catch { /* ignore */ }
     let player = findPlayerByName(n)
     if (!player) { player = { id: addPlayer(n), name: n } }
     login(player)
