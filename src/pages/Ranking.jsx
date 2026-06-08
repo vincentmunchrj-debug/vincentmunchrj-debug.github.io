@@ -8,7 +8,8 @@ import Crest from '../components/Crest.jsx'
 export default function Ranking() {
   const { session } = useSession()
   const { t, lang } = useT()
-  const players = getPlayers()
+  // Les comptes "fantômes" (pseudo commençant par "_") sont exclus du classement (tests)
+  const players = getPlayers().filter((p) => !p.name.trim().startsWith('_'))
   const matches = getMatches()
   const settings = getSettings()
   const championTeamId = settings.championTeamId
