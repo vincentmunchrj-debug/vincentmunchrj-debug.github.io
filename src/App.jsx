@@ -68,7 +68,9 @@ export default function App() {
 
 function Guard({ children }) {
   const { session } = useSession()
-  if (!session) return <Navigate to="/login" replace />
+  const loc = useLocation()
+  // On conserve la query (?g=new, ?g=Studio X) à travers la redirection vers /login
+  if (!session) return <Navigate to={'/login' + loc.search} replace />
   return children
 }
 

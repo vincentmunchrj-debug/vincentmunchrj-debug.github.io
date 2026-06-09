@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, Navigate } from 'react-router-dom'
 import { useSession } from '../App.jsx'
-import { loginOrRegister, createGroup } from '../lib/store.js'
+import { loginOrRegister, createGroup, listStudioNumbers } from '../lib/store.js'
 import { useT } from '../i18n.js'
 import LangToggle from '../components/LangToggle.jsx'
 import SoundButton from '../components/SoundButton.jsx'
@@ -28,7 +28,12 @@ export default function Login() {
   const [copied, setCopied] = useState(false)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [studios, setStudios] = useState([]) // Studios existants (≥ 2) à sélectionner
+  const [joinNum, setJoinNum] = useState('')
   const navigate = useNavigate()
+
+  // Lien public : on charge la liste des Studios existants à rejoindre.
+  useEffect(() => { if (publicMode) listStudioNumbers().then(setStudios) }, [publicMode])
 
   if (session) return <Navigate to="/" replace />
 
@@ -41,6 +46,13 @@ export default function Login() {
     setBusy(false)
     if (code) { setGroup(code); setShowInvite(true) }
     else setError(t('errGeneric'))
+  }
+
+  // Entrer dans le Studio sélectionné → bascule vers la connexion (pseudo + code).
+  const onJoin = () => {
+    if (!joinNum) return
+    setError('')
+    setGroup('Studio ' + joinNum)
   }
 
   const copyInvite = () => {
@@ -94,11 +106,25 @@ export default function Login() {
 
             {publicMode && !group ? (
               <div className="public-panel">
-                <p className="muted" style={{ fontSize: 14, marginTop: 4, lineHeight: 1.45 }}>{t('pubSub')}</p>
-                <button className="btn yellow" style={{ marginTop: 10 }} onClick={onCreateGroup} disabled={busy}>
+                <label className="label" style={{ textAlign: 'left' }}>{t('joinTitle')}</label>
+                <div className="join-row">
+                  <select className="input" value={joinNum}
+                    onChange={(e) => { setJoinNum(e.target.value); setError('') }}>
+                    <option value="">STUDIO …</option>
+                    {studios.map((n) => <option key={n} value={n}>Studio {n}</option>)}
+                  </select>
+                  <button className="btn yellow" onClick={onJoin} disabled={!joinNum || busy}>
+                    {t('joinBtn')}
+                  </button>
+                </div>
+
+                <div className="pub-or">{t('pubOr')}</div>
+
+                <button className="btn" onClick={onCreateGroup} disabled={busy}>
                   {busy ? '…' : t('pubCreate')}
                 </button>
-                <p className="muted" style={{ fontSize: 12, marginTop: 18, marginBottom: 0 }}>{t('pubInviteNote')}</p>
+
+                <p className="muted" style={{ fontSize: 12, marginTop: 16, marginBottom: 0 }}>{t('pubInviteNote')}</p>
               </div>
             ) : (
             <>

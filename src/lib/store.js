@@ -165,11 +165,35 @@ export async function enterGroup(g) {
   try { await loadGroupData(g) } catch { /* ignore */ }
   emit()
 }
+// Numéros des Studios existants (≥ 2). Studio 1 = groupe privé, jamais listé.
+function studioNum(code) {
+  const m = String(code || '').match(/(\d+)/)
+  return m ? parseInt(m[1], 10) : NaN
+}
+export async function listStudioNumbers() {
+  if (!state.online) return []
+  const { data, error } = await supabase.from('groups').select('code')
+  if (error) { console.warn('list groups:', error.message); return [] }
+  return (data || []).map((r) => studioNum(r.code))
+    .filter((n) => Number.isFinite(n) && n >= 2)
+    .sort((a, b) => a - b)
+}
+// Crée le prochain Studio libre en numérotation séquentielle (Studio 2, 3, 4…).
 export async function createGroup() {
   if (!state.online) return 'Studio 1'
+  try {
+    const { data } = await supabase.from('groups').select('code')
+    const used = new Set((data || []).map((r) => studioNum(r.code)).filter(Number.isFinite))
+    let n = 2
+    while (used.has(n)) n++
+    const code = 'Studio ' + n
+    const { error } = await supabase.from('groups').insert({ code })
+    if (!error) return code // numéro qui se suit ✓
+  } catch (e) { console.warn('create seq:', e?.message || e) }
+  // Repli : RPC d'origine si l'insertion directe est refusée ou en cas de collision
   const { data, error } = await supabase.rpc('create_group')
   if (error) { console.warn('create_group:', error.message); return null }
-  return data // code "Studio NNNN"
+  return data
 }
 
 // --- Lecture (synchrone) ---------------------------------------

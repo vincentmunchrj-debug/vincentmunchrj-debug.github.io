@@ -274,3 +274,14 @@ body {
 .link-btn { display: block; width: 100%; margin-top: 12px; background: none; border: none; color: #4a5a74;
   font-size: 13px; font-weight: 700; cursor: pointer; text-decoration: underline; }
 .entry-title { margin: 6px 0 2px; font-size: 24px; font-weight: 800; }
+
+/* Panneau du lien public : entrer dans un Studio ou en créer un */
+.public-panel { margin-top: 6px; }
+.public-panel .join-row { display: flex; gap: 8px; align-items: stretch; }
+.public-panel .join-row .input { flex: 1; }
+.public-panel .join-row .btn { width: auto; padding: 0 18px; margin-top: 0; }
+.public-panel .pub-or { text-align: center; color: #7a879b; font-size: 12px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 1px; margin: 14px 0; position: relative; }
+.public-panel .pub-or::before, .public-panel .pub-or::after {
+  content: ''; position: absolute; top: 50%; width: 38%; height: 1px; background: rgba(0,0,0,.12); }
+.public-panel .pub-or::before { left: 0; } .public-panel .pub-or::after { right: 0; }
