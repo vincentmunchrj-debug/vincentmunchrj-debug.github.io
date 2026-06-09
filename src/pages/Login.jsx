@@ -16,9 +16,13 @@ export default function Login() {
     try { return localStorage.getItem('bolaocopa26.lastname') || '' } catch { return '' }
   })
   const [pin, setPin] = useState('')
+  // Lien public (site/pub) : "?g=new" → on n'entre PAS dans Studio 1, on doit créer son groupe.
+  // Lien nu (sans ?g) → Studio 1 (tes amis), inchangé. Lien d'invitation "?g=Studio X" → ce groupe.
+  const rawG = new URLSearchParams(window.location.search).get('g')
+  const publicMode = rawG === 'new'
   const [group, setGroup] = useState(() => {
-    const g = new URLSearchParams(window.location.search).get('g')
-    return g ? g.trim() : DEFAULT_GROUP
+    if (publicMode) return '' // aucun groupe préchargé : création obligatoire
+    return rawG ? rawG.trim() : DEFAULT_GROUP
   })
   const [showInvite, setShowInvite] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -88,6 +92,16 @@ export default function Login() {
             <div className="entry-logo"><img src="/img/minicopa.png" alt="" /></div>
             <h1 className="entry-title">BolãoCopa26</h1>
 
+            {publicMode && !group ? (
+              <div className="public-panel">
+                <p className="muted" style={{ fontSize: 14, marginTop: 4, lineHeight: 1.45 }}>{t('pubSub')}</p>
+                <button className="btn yellow" style={{ marginTop: 10 }} onClick={onCreateGroup} disabled={busy}>
+                  {busy ? '…' : t('pubCreate')}
+                </button>
+                <p className="muted" style={{ fontSize: 12, marginTop: 18, marginBottom: 0 }}>{t('pubInviteNote')}</p>
+              </div>
+            ) : (
+            <>
             <div className="group-chip">{t('groupLabel')} · <strong>{group}</strong></div>
 
             {showInvite && (
@@ -134,6 +148,8 @@ export default function Login() {
             )}
 
             <p className="muted" style={{ fontSize: 12, marginBottom: 0, marginTop: 10 }}>{t('codeHint')}</p>
+            </>
+            )}
           </div>
         </div>
       )}
