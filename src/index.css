@@ -275,6 +275,17 @@ body {
   font-size: 13px; font-weight: 700; cursor: pointer; text-decoration: underline; }
 .entry-title { margin: 6px 0 2px; font-size: 24px; font-weight: 800; }
 
+/* Bouton « Inviter » (créateur de Studio) + fenêtre du lien */
+.invite-btn { margin-top: 6px; font-size: 12px; font-weight: 800; cursor: pointer;
+  color: #1a1400; background: var(--yellow); border: none; border-radius: 999px; padding: 5px 12px; }
+.invite-modal { position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,.6);
+  display: flex; align-items: center; justify-content: center; padding: 22px; }
+.invite-modal-card { width: 100%; max-width: 380px; background: #fff; color: #122038;
+  border-radius: 18px; padding: 20px; box-shadow: 0 20px 60px rgba(0,0,0,.45); }
+.invite-modal-title { margin: 0 0 4px; font-size: 17px; }
+.invite-modal-card .invite-url { background: #f1f4f9; border: 1px solid #d7deea; border-radius: 10px;
+  padding: 10px; font-size: 13px; word-break: break-all; color: #1d2a44; }
+
 /* Panneau du lien public : entrer dans un Studio ou en créer un */
 .public-panel { margin-top: 6px; }
 .public-panel .join-row { display: flex; gap: 8px; align-items: stretch; }

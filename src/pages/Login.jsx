@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, Navigate } from 'react-router-dom'
 import { useSession } from '../App.jsx'
-import { loginOrRegister, createGroup, listStudioNumbers } from '../lib/store.js'
+import { loginOrRegister, createGroup, listStudioNumbers, markCreatedStudio } from '../lib/store.js'
 import { useT } from '../i18n.js'
 import LangToggle from '../components/LangToggle.jsx'
 import SoundButton from '../components/SoundButton.jsx'
@@ -43,14 +43,14 @@ export default function Login() {
 
   if (session) return <Navigate to="/" replace />
 
-  const inviteUrl = `${window.location.origin}${window.location.pathname}?g=${encodeURIComponent(group)}`
+  const inviteUrl = `${window.location.origin}/?g=${encodeURIComponent(group)}`
   const canEnter = name.trim() && pin.length === 4 && !busy
 
   const onCreateGroup = async () => {
     setBusy(true); setError('')
     const code = await createGroup()
     setBusy(false)
-    if (code) { setGroup(code); setShowInvite(true) }
+    if (code) { markCreatedStudio(code); setGroup(code); setShowInvite(true) }
     else setError(t('errGeneric'))
   }
 

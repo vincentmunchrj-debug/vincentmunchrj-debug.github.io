@@ -4,12 +4,13 @@ import Login from './pages/Login.jsx'
 import Matches from './pages/Matches.jsx'
 import Champion from './pages/Champion.jsx'
 import Ranking from './pages/Ranking.jsx'
-import { init, subscribe, getVersion, isReady, isOnline, enterGroup, getGroup } from './lib/store.js'
+import { init, subscribe, getVersion, isReady, isOnline, enterGroup, getGroup, isCreatedStudio } from './lib/store.js'
 import { useT } from './i18n.js'
 import LangToggle from './components/LangToggle.jsx'
 import SoundButton from './components/SoundButton.jsx'
 // (musique : silence par défaut, déclenchée uniquement via le bouton haut-parleur)
 import Splash from './components/Splash.jsx'
+import InviteButton from './components/InviteButton.jsx'
 
 // --- Session (joueur courant), persistée en localStorage
 const SESSION_KEY = 'bolaocopa26.session'
@@ -104,6 +105,7 @@ function Header() {
       <div>
         <h1>BolãoCopa26</h1>
         <div className="sub">{getGroup() || t('subtitle')} · {isOnline() ? '🟢 ' + t('online') : '🟡 ' + t('local')}</div>
+        {isCreatedStudio(getGroup()) && <InviteButton />}
       </div>
       <div className="header-right">
         <SoundButton />

@@ -157,6 +157,20 @@ export async function refreshAll() {
   try { await Promise.all([hydrateLight(), loadGroupData(state.group)]); emit() } catch { /* garde l'état */ }
 }
 
+// --- Studios créés sur cet appareil (pour afficher le bouton « Inviter » au créateur) ---
+const CREATED_KEY = 'bolaocopa26.createdStudios'
+export function markCreatedStudio(code) {
+  if (!code) return
+  try {
+    const list = JSON.parse(localStorage.getItem(CREATED_KEY) || '[]')
+    if (!list.includes(code)) { list.push(code); localStorage.setItem(CREATED_KEY, JSON.stringify(list)) }
+  } catch { /* ignore */ }
+}
+export function isCreatedStudio(code) {
+  if (!code) return false
+  try { return JSON.parse(localStorage.getItem(CREATED_KEY) || '[]').includes(code) } catch { return false }
+}
+
 // --- Groupe courant -------------------------------------------
 export function getGroup() { return state.group || null }
 export async function enterGroup(g) {
