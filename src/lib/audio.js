@@ -22,14 +22,8 @@ function ensure() {
   return el
 }
 
-// Tente de lancer la musique (splash + 1er tap). Sans effet si déjà en lecture.
-export function playLaunchOnce() {
-  ensure()
-  if (playing) return
-  el.play().catch(() => { /* autoplay bloqué : l'utilisateur la lancera via le bouton */ })
-}
-
-// Bouton haut-parleur : démarre ou met en pause.
+// Bouton haut-parleur : démarre ou met en pause. (Silence par défaut : aucun
+// déclenchement automatique — la musique ne part QUE sur appui du bouton.)
 export function toggleMusic() {
   ensure()
   if (playing) { el.pause() } else { el.play().catch(() => {}) }

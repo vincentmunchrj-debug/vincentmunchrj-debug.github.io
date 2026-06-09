@@ -231,6 +231,11 @@ body {
 .entry-lang { position: absolute; top: calc(env(safe-area-inset-top, 0px) + 16px); right: 16px; z-index: 5; display: flex; align-items: center; gap: 8px; }
 .sound-btn { font-size: 26px; line-height: 1; background: rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.3); border-radius: 12px; padding: 6px 10px; cursor: pointer; }
 .header-right .sound-btn { font-size: 16px; padding: 4px 7px; border-radius: 8px; background: rgba(0,0,0,.25); }
+.sound-btn.hint { animation: soundHint 1.1s ease-in-out infinite; }
+@keyframes soundHint {
+  0%, 100% { opacity: .55; box-shadow: 0 0 0 0 rgba(255,210,0,0); border-color: rgba(255,255,255,.3); }
+  50% { opacity: 1; box-shadow: 0 0 0 3px rgba(255,210,0,.45); border-color: var(--yellow); }
+}
 .entry-cup { position: absolute; inset: 0; background: none; border: none; padding: 0; cursor: pointer; z-index: 3; }
 .entry-cup img { width: 100%; height: 100%; object-fit: cover; animation: cupGlow 2.2s ease-in-out infinite; }
 @keyframes cupGlow {
