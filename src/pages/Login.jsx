@@ -29,11 +29,17 @@ export default function Login() {
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [studios, setStudios] = useState([]) // Studios existants (≥ 2) à sélectionner
-  const [joinNum, setJoinNum] = useState('')
+  const [joinNum, setJoinNum] = useState('2') // numéro choisi, « Studio 2 » par défaut
   const navigate = useNavigate()
 
-  // Lien public : on charge la liste des Studios existants à rejoindre.
-  useEffect(() => { if (publicMode) listStudioNumbers().then(setStudios) }, [publicMode])
+  // Lien public : on charge la liste des Studios existants et on présélectionne le plus petit.
+  useEffect(() => {
+    if (!publicMode) return
+    listStudioNumbers().then((list) => {
+      setStudios(list)
+      setJoinNum(String(list[0] ?? 2))
+    })
+  }, [publicMode])
 
   if (session) return <Navigate to="/" replace />
 
@@ -110,8 +116,7 @@ export default function Login() {
                 <div className="join-row">
                   <select className="input" value={joinNum}
                     onChange={(e) => { setJoinNum(e.target.value); setError('') }}>
-                    <option value="">STUDIO …</option>
-                    {studios.map((n) => <option key={n} value={n}>Studio {n}</option>)}
+                    {(studios.length ? studios : [2]).map((n) => <option key={n} value={n}>Studio {n}</option>)}
                   </select>
                   <button className="btn yellow" onClick={onJoin} disabled={!joinNum || busy}>
                     {t('joinBtn')}
