@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Bolão da Copa 2026</title>
+  <meta name="description" content="Palpites entre amigos na Copa do Mundo 2026. Pronostics entre amis pour la Coupe du Monde 2026.">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Helvetica Neue', Arial, sans-serif; min-height: 100vh; background: #000;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden;
+    }
+    /* Terrain vertical doré sur noir — jamais étiré (noir sur les côtés en ordinateur). */
+    .field {
+      position: relative;
+      aspect-ratio: 2160 / 3840;
+      height: min(100vh, 177.78vw);
+      max-height: 90vh;
+      background: url('fondblackgold.png') center / cover no-repeat;
+      container-type: size;
+    }
+    .gold {
+      background: linear-gradient(180deg, #ffe08a, #f6b026 50%, #e07a00);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+      filter: drop-shadow(0 2px 7px rgba(0,0,0,.9));
+    }
+    /* ZONE HAUTE : coupe + titre, dans l'intervalle au-dessus du rond central */
+    .top {
+      position: absolute; top: 31%; left: 0; right: 0; transform: translateY(-50%);
+      display: flex; flex-direction: column; align-items: center;
+    }
+    .trophy { height: 11.9cqh; width: auto; filter: drop-shadow(0 6px 22px rgba(255,180,30,.5)); }
+    .title { margin-top: 1.6cqh; font-size: 5.8cqw; font-weight: 900; line-height: 1; letter-spacing: .5px; text-align: center; white-space: nowrap; }
+    /* ZONE BASSE : texte + bouton, entre le rond central et la surface */
+    .bottom {
+      position: absolute; top: 68%; left: 0; right: 0; transform: translateY(-50%);
+      padding: 0 7%; text-align: center;
+    }
+    .tagline { font-size: 3.6cqw; line-height: 1.7; font-weight: 700; white-space: nowrap; }
+    .cta {
+      display: inline-flex; align-items: center; gap: 8px; margin-top: 4.5cqw;
+      padding: 3.2cqw 7cqw; border-radius: 999px; text-decoration: none;
+      font-weight: 800; font-size: 4.8cqw; color: #1a1400;
+      background: linear-gradient(180deg, #ffe08a, #f6b026 50%, #e07a00);
+      box-shadow: 0 8px 26px rgba(224,122,0,.5);
+    }
+    .cta:active { transform: scale(.97); }
+    .author {
+      position: relative; margin-top: 2.2vh; left: 0; right: 0; text-align: center; z-index: 9;
+      font-size: 12px; font-weight: 600; opacity: .8; letter-spacing: .3px;
+    }
+    .sound-btn {
+      position: fixed; top: calc(env(safe-area-inset-top, 0px) + 14px); right: 14px; z-index: 9;
+      font-size: 24px; line-height: 1; cursor: pointer; color: #fff;
+      background: rgba(0,0,0,.5); border: 1px solid rgba(246,176,38,.5); border-radius: 12px; padding: 6px 10px;
+    }
+    .sound-btn.hint { animation: soundHint 1.1s ease-in-out infinite; }
+    @keyframes soundHint {
+      0%, 100% { opacity: .55; box-shadow: 0 0 0 0 rgba(255,210,0,0); }
+      50% { opacity: 1; box-shadow: 0 0 0 3px rgba(255,210,0,.5); }
+    }
+  </style>
+</head>
+<body>
+  <button id="sound" class="sound-btn hint" aria-label="Ativar o som">🔇</button>
+
+  <div class="field">
+    <div class="top">
+      <img class="trophy" src="cup.png" alt="">
+      <h1 class="title gold">BOLÃO DA COPA 2026</h1>
+    </div>
+
+    <div class="bottom">
+      <p class="tagline gold">Palpites entre amigos · Copa 2026<br>Pronostics entre amis · Coupe 2026</p>
+      <a class="cta" href="https://vincentmunchrj-debug.github.io/?g=new" target="_blank" rel="noopener">🏆 Jogar / Jouer</a>
+    </div>
+  </div>
+
+  <div class="author gold">par Vincent Munch · © 2026 · Rio Selvagem Studio</div>
+
+  <script>
+    var audio = new Audio('https://vincentmunchrj-debug.github.io/audio/launch.mp3');
+    audio.volume = 0.5;
+    var btn = document.getElementById('sound');
+    var playing = false;
+    btn.addEventListener('click', function () {
+      btn.classList.remove('hint');
+      if (playing) { audio.pause(); } else { audio.play().catch(function () {}); }
+    });
+    audio.addEventListener('play',  function () { playing = true;  btn.textContent = '🔊'; });
+    audio.addEventListener('pause', function () { playing = false; btn.textContent = '🔇'; });
+    audio.addEventListener('ended', function () { playing = false; btn.textContent = '🔇'; });
+    setTimeout(function () { btn.classList.remove('hint'); }, 14000);
+  </script>
+</body>
+</html>

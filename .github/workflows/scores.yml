@@ -13,9 +13,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm install
-      - run: node scripts/setup.mjs
+      # Robot ESPN : écrit UNIQUEMENT les scores des matchs terminés. Aucun ré-import, aucun effacement.
+      - run: node scripts/updateScores.mjs
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-          VITE_FOOTBALL_DATA_KEY: ${{ secrets.VITE_FOOTBALL_DATA_KEY }}
