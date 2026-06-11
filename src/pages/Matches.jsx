@@ -52,7 +52,9 @@ function Stepper({ value, onChange, disabled }) {
 function MatchCard({ match, bet, playerId, onSaved }) {
   const { t, lang } = useT()
   const locked = new Date(match.kickoff).getTime() <= Date.now()
-  const played = !!match.actual
+  const live = match.status === 'live'     // match en cours -> score en direct (mis à jour chaque minute)
+  const final = !!match.actual && !live    // match terminé -> score définitif
+  const played = final
   const [home, setHome] = useState(bet?.home ?? '')
   const [away, setAway] = useState(bet?.away ?? '')
   const [qualifier, setQualifier] = useState(bet?.qualifier ?? null)
@@ -95,8 +97,10 @@ function MatchCard({ match, bet, playerId, onSaved }) {
     <div className="card">
       <div className="match-meta">
         <span>{t('group')} {match.group} · {dateStr}</span>
-        {played ? (
+        {final ? (
           <span className="result-badge">{t('result')}: {match.actual.home}–{match.actual.away}</span>
+        ) : live ? (
+          <span className="live-badge">{t('live')} {match.actual.home}–{match.actual.away}</span>
         ) : locked ? (
           <span className="locked-badge">{t('started')}</span>
         ) : (

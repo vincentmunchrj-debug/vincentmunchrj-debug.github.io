@@ -117,7 +117,8 @@ export function tallyPlayer(bets, matches, pick, championTeamId) {
 
   for (const bet of bets || []) {
     const m = byId.get(bet.matchId)
-    if (!m || !m.actual) continue
+    // On ne compte un match QUE s'il est terminé (le classement ne bouge pas pendant le direct).
+    if (!m || !m.actual || m.status === 'live') continue
     const r = scoreMatch(bet.pred, m.actual, { homeId: m.home, awayId: m.away, realWinner: m.winner })
     matchPoints += r.points
     detail.push({ matchId: bet.matchId, ...r })
