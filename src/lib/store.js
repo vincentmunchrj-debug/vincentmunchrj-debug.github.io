@@ -146,10 +146,18 @@ export async function init() {
   emit()
 }
 
-// Poll léger (scores des matchs)
+// Poll léger (scores des matchs + dernier message pour le point rouge du chat)
 export async function refresh() {
   if (!state.online) return
   try { await hydrateLight(); emit() } catch { /* garde l'état courant */ }
+  if (supabase && state.group) {
+    supabase.from('messages').select('created_at').eq('group_code', state.group)
+      .order('created_at', { ascending: false }).limit(1)
+      .then(({ data }) => {
+        const lat = data?.[0]?.created_at
+        if (lat && lat !== state.lastChatAt) { state.lastChatAt = lat; emit() }
+      }).catch(() => {})
+  }
 }
 
 // Rechargement complet (scores + données du groupe) — à l'ouverture du Classement
@@ -318,6 +326,78 @@ export function setMatchResult(matchId, actual) {
       actual_away: actual ? actual.away : null,
     }).eq('id', matchId).then(({ error }) => { if (error) console.warn('result:', error.message) })
   }
+}
+
+// --- Chat (messages en direct par Studio) ---------------------------------
+let chatMessages = []
+let chatChannel = null
+
+const chatListeners = new Set()
+export function subscribeChatMessages(fn) { chatListeners.add(fn); return () => chatListeners.delete(fn) }
+export function getChatMessages() { return chatMessages }
+function emitChat() { chatListeners.forEach((fn) => fn()) }
+
+export async function loadMessages(group) {
+  if (!supabase || !group) { chatMessages = []; emitChat(); return }
+  try {
+    const { data, error } = await supabase
+      .from('messages').select('*').eq('group_code', group)
+      .order('created_at', { ascending: true }).limit(200)
+    if (error) throw error
+    chatMessages = data || []
+    emitChat()
+  } catch (e) {
+    console.warn('loadMessages:', e?.message || e)
+    chatMessages = []; emitChat()
+  }
+}
+
+export async function postMessage(group, playerId, name, text, langOrig) {
+  if (!supabase || !group) return null
+  try {
+    const { data, error } = await supabase.functions.invoke('post-message', {
+      body: { group_code: group, player_id: playerId, name, text, lang_orig: langOrig }
+    })
+    if (error) { console.warn('postMessage:', error.message); return null }
+    return data
+  } catch (e) {
+    console.warn('postMessage:', e?.message || e); return null
+  }
+}
+
+export function openChatRealtime(group) {
+  if (!supabase || !group) return
+  closeChatRealtime()
+  chatChannel = supabase
+    .channel('chat-' + group)
+    .on('postgres_changes', {
+      event: 'INSERT', schema: 'public', table: 'messages',
+      filter: `group_code=eq.${group}`
+    }, ({ new: msg }) => {
+      chatMessages = [...chatMessages, msg]
+      state.lastChatAt = msg.created_at
+      emitChat()
+    })
+    .subscribe()
+}
+
+export function closeChatRealtime() {
+  if (chatChannel && supabase) { supabase.removeChannel(chatChannel); chatChannel = null }
+}
+
+export function markChatSeen(group) {
+  if (!group) return
+  try { localStorage.setItem('bolaocopa26.chatSeen.' + group, new Date().toISOString()) } catch {}
+}
+
+export function getUnreadChat() {
+  const g = state.group
+  if (!g || !state.lastChatAt) return false
+  try {
+    const seen = localStorage.getItem('bolaocopa26.chatSeen.' + g)
+    if (!seen) return true
+    return new Date(state.lastChatAt) > new Date(seen)
+  } catch { return false }
 }
 
 // --- Reset (mode local uniquement) -----------------------------

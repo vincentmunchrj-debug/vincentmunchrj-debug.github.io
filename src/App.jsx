@@ -11,6 +11,8 @@ import SoundButton from './components/SoundButton.jsx'
 // (musique : silence par défaut, déclenchée uniquement via le bouton haut-parleur)
 import Splash from './components/Splash.jsx'
 import InviteButton from './components/InviteButton.jsx'
+import ChatBubble from './components/ChatBubble.jsx'
+import ChatPanel from './components/ChatPanel.jsx'
 
 // --- Session (joueur courant), persistée en localStorage
 const SESSION_KEY = 'bolaocopa26.session'
@@ -25,6 +27,7 @@ export default function App() {
     try { return JSON.parse(localStorage.getItem(SESSION_KEY)) } catch { return null }
   })
   const [splash, setSplash] = useState(true)
+  const [chatOpen, setChatOpen] = useState(false)
 
   // Démarrage : charge le global, puis le groupe de la session (défaut "Studio 1")
   useEffect(() => {
@@ -60,6 +63,12 @@ export default function App() {
               </Routes>
             </div>
             {session && <BottomNav />}
+            {session && !chatOpen && <ChatBubble onOpen={() => setChatOpen(true)} />}
+            {session && chatOpen && (
+              <div className="chat-overlay" onClick={(e) => { if (e.target === e.currentTarget) setChatOpen(false) }}>
+                <ChatPanel onClose={() => setChatOpen(false)} />
+              </div>
+            )}
           </div>
         </SessionCtx.Provider>
       )}
