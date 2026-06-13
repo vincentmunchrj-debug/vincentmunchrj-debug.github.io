@@ -76,6 +76,46 @@ body {
 .card .rank-row { border-bottom-color: #e3e8f0; }
 .card .rank-pos { color: #8a99b3; }
 
+/* Cartouches par niveau du tournoi (le joueur lit l'avancement à la couleur) */
+/* Poules = blanc transparent (style .card par défaut). KO = teinte par tour. */
+/* 16es / 8es / quarts / demies : dégradé de la teinte vers le blanc translucide */
+.card.phase-r32 {
+  background: linear-gradient(140deg, rgba(86,156,255,.52) 0%, rgba(255,255,255,.58) 68%);
+  border-color: rgba(86,156,255,.55);
+}
+.card.phase-r16 {
+  background: linear-gradient(140deg, rgba(58,198,120,.52) 0%, rgba(255,255,255,.58) 68%);
+  border-color: rgba(58,198,120,.55);
+}
+.card.phase-quarters {
+  background: linear-gradient(140deg, rgba(240,96,96,.52) 0%, rgba(255,255,255,.58) 68%);
+  border-color: rgba(240,96,96,.55);
+}
+.card.phase-semis {
+  background: linear-gradient(140deg, rgba(168,178,196,.66) 0%, rgba(255,255,255,.58) 68%);
+  border-color: rgba(168,178,196,.7);
+}
+/* Finale : doré plein et brillant */
+.card.phase-final {
+  background: linear-gradient(140deg, rgba(247,212,98,.94), rgba(226,174,44,.90));
+  border-color: rgba(200,150,30,.85);
+  box-shadow: 0 6px 22px rgba(196,150,30,.40);
+}
+/* 3e place : bronze plein, plus sombre et moins brillant */
+.card.phase-third {
+  background: linear-gradient(140deg, rgba(200,142,88,.92), rgba(150,98,54,.90));
+  border-color: rgba(140,92,50,.85);
+  box-shadow: 0 6px 20px rgba(120,80,40,.34);
+}
+
+/* Lisibilité de l'en-tête (titre du niveau + date + résultat) sur les cartouches teintés */
+.card.phase-r32 .match-meta,
+.card.phase-r16 .match-meta,
+.card.phase-quarters .match-meta,
+.card.phase-semis .match-meta { color: #14223e; font-weight: 600; }
+
+.pso-badge { font-weight: 600; opacity: .85; }
+
 /* Carte de match */
 .match-meta { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-bottom: 10px; }
 .match-teams { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; }

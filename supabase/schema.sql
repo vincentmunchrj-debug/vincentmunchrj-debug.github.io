@@ -26,7 +26,11 @@ create table if not exists matches (
   home text references teams(id),
   away text references teams(id),
   actual_home int,            -- null tant que pas joué
-  actual_away int
+  actual_away int,
+  status text,                -- null | 'live' | 'final' (robot de scores)
+  winner text references teams(id), -- KO : équipe qualifiée (départage les nuls aux t.a.b.)
+  pso_home int,               -- KO : score des tirs au but (affichage « 4-2 t.a.b. »)
+  pso_away int
 );
 
 -- Pronostics de match

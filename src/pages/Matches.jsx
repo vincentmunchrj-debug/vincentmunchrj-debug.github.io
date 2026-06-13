@@ -50,7 +50,7 @@ function Stepper({ value, onChange, disabled }) {
 }
 
 function MatchCard({ match, bet, playerId, onSaved }) {
-  const { t, lang } = useT()
+  const { t, lang, dict } = useT()
   const locked = new Date(match.kickoff).getTime() <= Date.now()
   const live = match.status === 'live'     // match en cours -> score en direct (mis à jour chaque minute)
   const final = !!match.actual && !live    // match terminé -> score définitif
@@ -93,12 +93,22 @@ function MatchCard({ match, bet, playerId, onSaved }) {
   const dateStr = d.toLocaleString(lang === 'fr' ? 'fr-FR' : 'pt-BR',
     { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
 
+  // Libellé du niveau : « Groupe X » pour les poules, sinon le nom du tour
+  const levelLabel = isKnockout
+    ? (dict.phaseLabel?.[match.phase] || '')
+    : `${t('group')} ${match.group}`
+  // Score des tirs au but (matchs à élimination terminés aux t.a.b.)
+  const hasShootout = match.psoHome != null && match.psoAway != null
+
   return (
-    <div className="card">
+    <div className={'card phase-' + match.phase}>
       <div className="match-meta">
-        <span>{t('group')} {match.group} · {dateStr}</span>
+        <span>{levelLabel} · {dateStr}</span>
         {final ? (
-          <span className="result-badge">{t('result')}: {match.actual.home}–{match.actual.away}</span>
+          <span className="result-badge">
+            {t('result')}: {match.actual.home}–{match.actual.away}
+            {hasShootout && <span className="pso-badge"> ({t('shootout')(match.psoHome, match.psoAway)})</span>}
+          </span>
         ) : live ? (
           <span className="live-badge">{t('live')} {match.actual.home}–{match.actual.away}</span>
         ) : locked ? (

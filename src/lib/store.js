@@ -62,6 +62,8 @@ function mapMatchRow(r) {
     home: r.home, away: r.away,
     status: r.status ?? null, // null | 'live' | 'final'
     winner: r.winner ?? null, // équipe qualifiée (élimination)
+    psoHome: r.pso_home ?? null, // score des tirs au but (élimination)
+    psoAway: r.pso_away ?? null,
     actual: r.actual_home != null && r.actual_away != null
       ? { home: r.actual_home, away: r.actual_away } : null,
   }
