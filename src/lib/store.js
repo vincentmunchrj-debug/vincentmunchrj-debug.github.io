@@ -187,6 +187,7 @@ export function getGroup() { return state.group || null }
 export async function enterGroup(g) {
   state.group = g
   if (!state.online) { emit(); return }
+  startChatWatch(g) // veille du chat dès l'entrée dans le groupe (point rouge en temps réel)
   try { await loadGroupData(g) } catch { /* ignore */ }
   emit()
 }
@@ -385,6 +386,37 @@ export function openChatRealtime(group) {
 
 export function closeChatRealtime() {
   if (chatChannel && supabase) { supabase.removeChannel(chatChannel); chatChannel = null }
+}
+
+// Veille permanente du chat (point rouge instantané même quand le panneau est fermé).
+// Indépendante de l'ouverture du panneau : tout nouveau message met à jour `lastChatAt`.
+let chatWatchChannel = null
+let chatWatchGroup = null
+export async function startChatWatch(group) {
+  if (!supabase || !group) return
+  if (chatWatchChannel && chatWatchGroup === group) return // déjà en place
+  stopChatWatch()
+  chatWatchGroup = group
+  // État initial : dernier message connu, pour que le point sorte dès l'ouverture de l'app.
+  try {
+    const { data } = await supabase.from('messages').select('created_at')
+      .eq('group_code', group).order('created_at', { ascending: false }).limit(1)
+    const lat = data?.[0]?.created_at
+    if (lat) { state.lastChatAt = lat; emit() }
+  } catch { /* ignore */ }
+  chatWatchChannel = supabase
+    .channel('chatwatch-' + group)
+    .on('postgres_changes', {
+      event: 'INSERT', schema: 'public', table: 'messages',
+      filter: `group_code=eq.${group}`
+    }, ({ new: msg }) => {
+      if (msg?.created_at) { state.lastChatAt = msg.created_at; emit() }
+    })
+    .subscribe()
+}
+export function stopChatWatch() {
+  if (chatWatchChannel && supabase) { supabase.removeChannel(chatWatchChannel); chatWatchChannel = null }
+  chatWatchGroup = null
 }
 
 export function markChatSeen(group) {

@@ -443,6 +443,13 @@ body {
   color: #d07a00; background: rgba(255, 210, 0, .22);
   border-radius: 3px; padding: 0 2px;
 }
+/* Mention « tout le groupe » (@studio / @todos) */
+.chat-mention.all {
+  color: #1769d6; background: rgba(40, 120, 230, .15);
+  border-radius: 3px; padding: 0 2px;
+}
+.chat-mention-opt.all { color: #1769d6; }
+.mention-hint { color: #9fb0c7; font-weight: 600; font-size: 12px; }
 
 .chat-orig-btn {
   font-size: 10px; color: #9fb0c7; background: none; border: none;

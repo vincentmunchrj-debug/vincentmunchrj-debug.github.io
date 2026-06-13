@@ -9,6 +9,8 @@ import {
 import { useT } from '../i18n.js'
 
 const MENTION_RE = /@([\wÀ-ſ]+)/g
+// Mention « tout le groupe » : @studio (FR) / @todos (PT). Les deux sont reconnus à la lecture.
+const GLOBAL_ALIASES = ['studio', 'todos']
 
 export default function ChatPanel({ onClose }) {
   const { session } = useSession()
@@ -39,11 +41,18 @@ export default function ChatPanel({ onClose }) {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages.length])
 
-  // Suggestions de mention filtrées
+  // Mot « tout le groupe » selon la langue active (proposé en tête de liste)
+  const globalWord = lang === 'fr' ? 'studio' : 'todos'
+
+  // Suggestions de mention : entrée « tout le groupe » en tête, puis les joueurs.
   const suggestions = mentionQ !== null
-    ? players
-        .filter((p) => p.id !== session.id && p.name.toLowerCase().startsWith(mentionQ.toLowerCase()))
-        .slice(0, 5)
+    ? (() => {
+        const q = mentionQ.toLowerCase()
+        const ppl = players.filter((p) => p.id !== session.id && p.name.toLowerCase().startsWith(q))
+        const out = []
+        if (globalWord.startsWith(q)) out.push({ id: '__all__', name: globalWord, all: true })
+        return out.concat(ppl).slice(0, 6)
+      })()
     : []
 
   const handleChange = (e) => {
@@ -99,8 +108,10 @@ export default function ChatPanel({ onClose }) {
     const parts = text.split(MENTION_RE)
     return parts.map((part, i) => {
       if (i % 2 === 1) {
-        const isMe = part.toLowerCase() === session.name.toLowerCase()
-        return <span key={i} className={'chat-mention' + (isMe ? ' me' : '')}>@{part}</span>
+        const low = part.toLowerCase()
+        const isMe = low === session.name.toLowerCase()
+        const isAll = GLOBAL_ALIASES.includes(low)
+        return <span key={i} className={'chat-mention' + (isMe ? ' me' : isAll ? ' all' : '')}>@{part}</span>
       }
       return part
     })
@@ -151,9 +162,10 @@ export default function ChatPanel({ onClose }) {
             {suggestions.map((p) => (
               <button
                 key={p.id}
-                className="chat-mention-opt"
+                className={'chat-mention-opt' + (p.all ? ' all' : '')}
                 onMouseDown={(e) => { e.preventDefault(); insertMention(p.name) }}>
                 @{p.name}
+                {p.all && <span className="mention-hint"> · {lang === 'fr' ? 'tout le groupe' : 'todo o grupo'}</span>}
               </button>
             ))}
           </div>
