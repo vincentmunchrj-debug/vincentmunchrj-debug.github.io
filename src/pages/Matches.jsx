@@ -153,8 +153,13 @@ function MatchCard({ match, bet, playerId, onSaved }) {
       )}
 
       {!locked && (
-        <button className="btn" style={{ marginTop: 12 }} onClick={onSave} disabled={!canSave}>
-          {saved ? t('saved') : t('savePick')}
+        <button
+          className={'btn' + (!saved && bet ? ' modify' : '')}
+          style={{ marginTop: 12 }}
+          onClick={onSave}
+          disabled={!canSave}
+        >
+          {saved ? t('saved') : bet ? t('modifyPick') : t('savePick')}
         </button>
       )}
 

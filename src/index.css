@@ -180,6 +180,7 @@ body {
 .btn:active { transform: scale(.99); }
 .btn.secondary { background: var(--card-2); color: var(--text); border: 1px solid var(--line); }
 .btn.yellow { background: var(--yellow); color: #1a1400; }
+.btn.modify { background: #e07d1a; }
 .btn:disabled { opacity: .5; }
 
 .input {
@@ -215,19 +216,37 @@ body {
   position: fixed; left: 50%; transform: translateX(-50%);
   bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
   width: calc(100% - 24px); max-width: 456px;
-  display: grid; grid-template-columns: repeat(4, 1fr);
+  display: grid; grid-template-columns: repeat(3, 1fr);
   background: rgba(255, 255, 255, .85); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
   border: 1px solid rgba(255, 255, 255, .6);
   border-radius: 22px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, .32);
   z-index: 10; overflow: hidden;
+  transition: grid-template-columns .25s ease;
 }
+.bottom-nav.has-live { grid-template-columns: repeat(4, 1fr); }
 .bottom-nav a {
   display: flex; flex-direction: column; align-items: center; gap: 3px;
   padding: 11px 0 9px; color: #6a7790; text-decoration: none; font-size: 11px; font-weight: 700;
 }
 .bottom-nav a.active { color: var(--green); }
 .bottom-nav .ic { font-size: 20px; }
+.bottom-nav a.live-tab { color: #e23a3a; }
+.bottom-nav a.live-tab.active { color: #e23a3a; }
+.live-ic { position: relative; display: inline-block; font-size: 20px; line-height: 1; }
+.live-ic::after { content: ''; position: absolute; top: -1px; right: -3px; width: 7px; height: 7px;
+  background: #e23a3a; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.85);
+  animation: liveDot 1.4s ease-in-out infinite; }
+@keyframes liveDot { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .4; transform: scale(.7); } }
+
+/* Badges points live (+2 vert / +3 bleu / +4 or) */
+.live-badge-pts { display: inline-block; font-size: 11px; font-weight: 700; padding: 1px 5px; border-radius: 5px; margin-left: 5px; }
+.live-badge-pts.p2 { background: #d4f4e3; color: #0a5c2e; border: 1px solid rgba(10,92,46,.2); }
+.live-badge-pts.p3 { background: #deeeff; color: #1455a4; border: 1px solid rgba(20,85,164,.2); }
+.live-badge-pts.p4 { background: #fff3b0; color: #7a5800; border: 1px solid rgba(200,150,0,.25); }
+.card .live-badge-pts.p2 { background: #d4f4e3; color: #0a5c2e; }
+.card .live-badge-pts.p3 { background: #deeeff; color: #1455a4; }
+.card .live-badge-pts.p4 { background: #fff3b0; color: #7a5800; }
 
 /* Divers */
 .row { display: flex; gap: 10px; align-items: center; }

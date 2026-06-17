@@ -4,7 +4,8 @@ import Login from './pages/Login.jsx'
 import Matches from './pages/Matches.jsx'
 import Champion from './pages/Champion.jsx'
 import Ranking from './pages/Ranking.jsx'
-import { init, subscribe, getVersion, isReady, isOnline, enterGroup, getGroup, isCreatedStudio } from './lib/store.js'
+import Live from './pages/Live.jsx'
+import { init, subscribe, getVersion, isReady, isOnline, enterGroup, getGroup, isCreatedStudio, getMatches } from './lib/store.js'
 import { useT } from './i18n.js'
 import LangToggle from './components/LangToggle.jsx'
 import SoundButton from './components/SoundButton.jsx'
@@ -59,6 +60,7 @@ export default function App() {
                 <Route path="/" element={<Guard><Matches /></Guard>} />
                 <Route path="/champion" element={<Guard><Champion /></Guard>} />
                 <Route path="/ranking" element={<Guard><Ranking /></Guard>} />
+                <Route path="/live" element={<Guard><Live /></Guard>} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </div>
@@ -87,7 +89,7 @@ function Guard({ children }) {
 // Fond « terrain » différent selon la page
 function PageBg() {
   const loc = useLocation()
-  const map = { '/': 'fond1', '/champion': 'fond2', '/ranking': 'fond3', '/admin': 'fond1' }
+  const map = { '/': 'fond1', '/champion': 'fond2', '/ranking': 'fond3', '/live': 'fond1' }
   const img = map[loc.pathname] || 'fond1'
   return <div className="page-bg" style={{ backgroundImage: `url(/img/${img}.jpg)` }} />
 }
@@ -129,11 +131,18 @@ function Header() {
 
 function BottomNav() {
   const { t } = useT()
+  const hasLive = getMatches().some(m => m.status === 'live')
   return (
-    <nav className="bottom-nav" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+    <nav className={'bottom-nav' + (hasLive ? ' has-live' : '')}>
       <NavLink to="/" end><span className="ic">⚽</span>{t('navMatches')}</NavLink>
       <NavLink to="/champion"><span className="ic">👑</span>{t('navChampion')}</NavLink>
       <NavLink to="/ranking"><span className="ic">📊</span>{t('navRanking')}</NavLink>
+      {hasLive && (
+        <NavLink to="/live" className={({ isActive }) => 'live-tab' + (isActive ? ' active' : '')}>
+          <span className="live-ic">🔴</span>
+          {t('navLive')}
+        </NavLink>
+      )}
     </nav>
   )
 }
