@@ -233,11 +233,6 @@ body {
 .bottom-nav .ic { font-size: 20px; }
 .bottom-nav a.live-tab { color: #e23a3a; }
 .bottom-nav a.live-tab.active { color: #e23a3a; }
-.live-ic { position: relative; display: inline-block; font-size: 20px; line-height: 1; }
-.live-ic::after { content: ''; position: absolute; top: -1px; right: -3px; width: 7px; height: 7px;
-  background: #e23a3a; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.85);
-  animation: liveDot 1.4s ease-in-out infinite; }
-@keyframes liveDot { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .4; transform: scale(.7); } }
 
 /* Badges points live (+2 vert / +3 bleu / +4 or) */
 .live-badge-pts { display: inline-block; font-size: 11px; font-weight: 700; padding: 1px 5px; border-radius: 5px; margin-left: 5px; }

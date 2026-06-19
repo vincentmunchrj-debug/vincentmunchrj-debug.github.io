@@ -139,7 +139,7 @@ function BottomNav() {
       <NavLink to="/ranking"><span className="ic">📊</span>{t('navRanking')}</NavLink>
       {hasLive && (
         <NavLink to="/live" className={({ isActive }) => 'live-tab' + (isActive ? ' active' : '')}>
-          <span className="live-ic">🔴</span>
+          <span className="ic">🔴</span>
           {t('navLive')}
         </NavLink>
       )}

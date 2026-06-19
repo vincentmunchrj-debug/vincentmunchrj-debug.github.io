@@ -39,7 +39,7 @@ function espnCode(comp: any): string | null {
 
 Deno.serve(async () => {
   const db = await (await fetch(
-    `${URL_}/rest/v1/matches?select=id,phase,kickoff,home,away,actual_home,actual_away,status,winner,pso_home,pso_away`,
+    `${URL_}/rest/v1/matches?select=id,phase,kickoff,home,away,actual_home,actual_away,status,winner,pso_home,pso_away,clock`,
     { headers: H },
   )).json();
 
@@ -101,6 +101,13 @@ Deno.serve(async () => {
           if (match.actual_home !== hs) patch.actual_home = hs;
           if (match.actual_away !== as) patch.actual_away = as;
           if (match.status !== st) patch.status = st;
+
+          // Horloge de jeu (affichage du temps EXACT en direct) : minute ESPN tant que
+          // le match est live ("47'", "90'+5'", "HT"), remise a vide une fois termine.
+          const newClock = st === "live"
+            ? (e.status?.type?.name === "STATUS_HALFTIME" ? "HT" : (e.status?.displayClock ?? null))
+            : null;
+          if ((match.clock ?? null) !== newClock) patch.clock = newClock;
 
           // 3) ÉLIMINATION terminée : qualifié + score des t.a.b. (si l'API les fournit).
           if (match.phase !== "groups" && st === "final") {

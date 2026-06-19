@@ -61,6 +61,7 @@ function mapMatchRow(r) {
     id: r.id, phase: r.phase, group: r.grp, kickoff: r.kickoff,
     home: r.home, away: r.away,
     status: r.status ?? null, // null | 'live' | 'final'
+    clock: r.clock ?? null, // horloge de jeu ESPN en direct ("47'", "90'+5'", "HT")
     winner: r.winner ?? null, // équipe qualifiée (élimination)
     psoHome: r.pso_home ?? null, // score des tirs au but (élimination)
     psoAway: r.pso_away ?? null,

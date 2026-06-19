@@ -70,10 +70,15 @@ export default function Live() {
   const projRank = {}
   projRows.forEach((r, i) => { projRank[r.player.id] = i + 1 })
 
-  // Minute approximative depuis le coup d'envoi
+  // Minute approximative depuis le coup d'envoi prévu.
+  // On retire les 15 min de pause de mi-temps (sinon la 2e période a 15 min d'avance
+  // et atteint 90 trop tôt). Reste une estimation : pas de temps additionnel réel.
   function elapsedMin(kickoff) {
-    const ms = Date.now() - new Date(kickoff).getTime()
-    return Math.min(90, Math.max(1, Math.floor(ms / 60000)))
+    const raw = Math.floor((Date.now() - new Date(kickoff).getTime()) / 60000)
+    if (raw < 1) return 1
+    if (raw <= 45) return raw          // 1re mi-temps
+    if (raw <= 60) return 45           // pause (~15 min) : on gèle à 45'
+    return Math.min(90, raw - 15)      // 2e mi-temps : on retranche la pause
   }
 
   return (
@@ -85,13 +90,16 @@ export default function Live() {
         const myPts = myBet && m.actual
           ? scoreMatch(myBet, m.actual, { homeId: m.home, awayId: m.away, realWinner: m.winner }).points
           : null
-        const min = elapsedMin(m.kickoff)
+        // Temps EXACT (horloge ESPN) si disponible, sinon repli sur l'estimation.
+        const clockLabel = m.clock
+          ? (m.clock === 'HT' ? t('halftime') : m.clock)
+          : elapsedMin(m.kickoff) + "'"
 
         return (
           <div key={m.id} className="card" style={{ marginBottom: 12 }}>
             {/* En-tête live */}
             <div className="match-meta">
-              <span className="live-badge">🔴 {t('live')} {min}'</span>
+              <span className="live-badge">{t('live')} {clockLabel}</span>
             </div>
 
             {/* Score */}
