@@ -76,6 +76,23 @@ body {
 .card .rank-row { border-bottom-color: #e3e8f0; }
 .card .rank-pos { color: #8a99b3; }
 
+/* Section repliable « 1ère Journée » (matchs déjà joués, en haut, fermée par défaut) */
+.round-fold { margin-bottom: 12px; }
+.round-fold-head {
+  width: 100%; display: flex; align-items: center; justify-content: space-between;
+  background: rgba(255, 255, 255, .58);
+  backdrop-filter: blur(16px) saturate(120%); -webkit-backdrop-filter: blur(16px) saturate(120%);
+  border: 1px solid rgba(255, 255, 255, .55); border-radius: 14px;
+  padding: 13px 16px; color: #122038; font-size: 15px; font-weight: 800; cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .16);
+}
+.round-fold-head:active { transform: scale(.99); }
+.round-fold-count {
+  font-size: 12px; font-weight: 700; color: #5b6b86;
+  background: #eef2f7; border-radius: 999px; padding: 3px 10px;
+}
+.round-fold-body { margin-top: 10px; }
+
 /* Cartouches par niveau du tournoi (le joueur lit l'avancement à la couleur) */
 /* Poules = blanc transparent (style .card par défaut). KO = teinte par tour. */
 /* 16es / 8es / quarts / demies : dégradé de la teinte vers le blanc translucide */

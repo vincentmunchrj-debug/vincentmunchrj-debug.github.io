@@ -56,6 +56,7 @@ const DICT = {
     navMatches: 'Jogos', navChampion: 'Campeão', navRanking: 'Ranking', navAdmin: 'Admin',
     // Matches
     matchesTitle: 'Jogos',
+    round1: '1ª rodada',
     matchesBanner: 'Acerte o vencedor (2 pts) + o saldo de gols (+1) + o placar exato (+1). Máx. 4 pts por jogo.',
     group: 'Grupo',
     result: 'Resultado',
@@ -172,6 +173,7 @@ const DICT = {
     loading: 'Chargement…',
     navMatches: 'Matchs', navChampion: 'Champion', navRanking: 'Classement', navAdmin: 'Admin',
     matchesTitle: 'Matchs',
+    round1: '1ère Journée',
     matchesBanner: 'Trouvez le vainqueur (2 pts) + la différence de buts (+1) + le score exact (+1). Max 4 pts par match.',
     group: 'Groupe',
     result: 'Résultat',
