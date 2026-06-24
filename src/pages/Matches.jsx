@@ -13,25 +13,25 @@ export default function Matches() {
   const bets = getBets(session.id)
   const [, force] = useState(0)
   const refresh = () => force((n) => n + 1)
-  const [showR1, setShowR1] = useState(false) // 1re journée repliée par défaut
-
   const visible = matches.filter((m) => m.home && m.away)
   const pending = matches.length - visible.length
 
-  // 1re journée = les 2 premiers matchs (par date) de chaque groupe en phase de poules
-  // (dans un groupe de 4, chaque équipe joue une fois lors de la journée 1 = 2 matchs).
+  // Journées de poules : pour chaque groupe (4 équipes), 2 matchs par journée.
+  // On replie les journées déjà passées (J1, J2) ; la journée courante reste déroulée.
   const byGroup = {}
   for (const m of matches) {
     if (m.phase !== 'groups' || !m.home || !m.away) continue
     ;(byGroup[m.group] ||= []).push(m)
   }
-  const r1Ids = new Set()
+  const r1Ids = new Set(); const r2Ids = new Set()
   for (const g of Object.keys(byGroup)) {
-    ;[...byGroup[g]].sort((a, b) => a.kickoff.localeCompare(b.kickoff)).slice(0, 2)
-      .forEach((m) => r1Ids.add(m.id))
+    const sorted = [...byGroup[g]].sort((a, b) => a.kickoff.localeCompare(b.kickoff))
+    sorted.slice(0, 2).forEach((m) => r1Ids.add(m.id))
+    sorted.slice(2, 4).forEach((m) => r2Ids.add(m.id))
   }
   const round1 = visible.filter((m) => r1Ids.has(m.id))
-  const rest = visible.filter((m) => !r1Ids.has(m.id))
+  const round2 = visible.filter((m) => r2Ids.has(m.id))
+  const rest = visible.filter((m) => !r1Ids.has(m.id) && !r2Ids.has(m.id))
 
   return (
     <div>
@@ -39,19 +39,10 @@ export default function Matches() {
       <div className="banner">{t('matchesBanner')}</div>
 
       {round1.length > 0 && (
-        <div className="round-fold">
-          <button className="round-fold-head" onClick={() => setShowR1((s) => !s)}>
-            <span>{showR1 ? '▾' : '▸'} {t('round1')}</span>
-            <span className="round-fold-count">{round1.length}</span>
-          </button>
-          {showR1 && (
-            <div className="round-fold-body">
-              {round1.map((m) => (
-                <MatchCard key={m.id} match={m} bet={bets[m.id]} playerId={session.id} onSaved={refresh} />
-              ))}
-            </div>
-          )}
-        </div>
+        <FoldSection title={t('round1')} matches={round1} bets={bets} playerId={session.id} onSaved={refresh} />
+      )}
+      {round2.length > 0 && (
+        <FoldSection title={t('round2')} matches={round2} bets={bets} playerId={session.id} onSaved={refresh} />
       )}
 
       {rest.map((m) => (
@@ -59,6 +50,25 @@ export default function Matches() {
       ))}
       {pending > 0 && (
         <p className="muted center" style={{ fontSize: 13, marginTop: 16 }}>{t('pendingKo')(pending)}</p>
+      )}
+    </div>
+  )
+}
+
+function FoldSection({ title, matches, bets, playerId, onSaved }) {
+  const [open, setOpen] = useState(false) // replié par défaut
+  return (
+    <div className="round-fold">
+      <button className="round-fold-head" onClick={() => setOpen((o) => !o)}>
+        <span>{open ? '▾' : '▸'} {title}</span>
+        <span className="round-fold-count">{matches.length}</span>
+      </button>
+      {open && (
+        <div className="round-fold-body">
+          {matches.map((m) => (
+            <MatchCard key={m.id} match={m} bet={bets[m.id]} playerId={playerId} onSaved={onSaved} />
+          ))}
+        </div>
       )}
     </div>
   )
