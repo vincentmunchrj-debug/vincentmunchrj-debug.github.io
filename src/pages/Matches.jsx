@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useSyncExternalStore } from 'react'
 import { useSession } from '../App.jsx'
-import { getMatches, getBets, setBet } from '../lib/store.js'
+import { getMatches, getBets, setBet, subscribe, getVersion } from '../lib/store.js'
 import { teamName } from '../data/teams.js'
 import { scoreMatch } from '../lib/scoring.js'
 import { useT } from '../i18n.js'
@@ -9,10 +9,10 @@ import Crest from '../components/Crest.jsx'
 export default function Matches() {
   const { session } = useSession()
   const { t } = useT()
+  useSyncExternalStore(subscribe, getVersion)
   const matches = getMatches()
   const bets = getBets(session.id)
-  const [, force] = useState(0)
-  const refresh = () => force((n) => n + 1)
+  const refresh = () => {}
   const visible = matches.filter((m) => m.home && m.away)
   const pending = matches.length - visible.length
 
