@@ -5,7 +5,7 @@ import Matches from './pages/Matches.jsx'
 import Champion from './pages/Champion.jsx'
 import Ranking from './pages/Ranking.jsx'
 import Live from './pages/Live.jsx'
-import { init, subscribe, getVersion, isReady, isOnline, enterGroup, getGroup, isCreatedStudio, getMatches } from './lib/store.js'
+import { init, subscribe, getVersion, isOnline, enterGroup, getGroup, isCreatedStudio, getMatches } from './lib/store.js'
 import { useT } from './i18n.js'
 import LangToggle from './components/LangToggle.jsx'
 import SoundButton from './components/SoundButton.jsx'
@@ -20,10 +20,13 @@ const SESSION_KEY = 'bolaocopa26.session'
 const SessionCtx = createContext(null)
 export const useSession = () => useContext(SessionCtx)
 
-export default function App() {
-  // Re-render à chaque changement de données (local ou venant des autres amis)
-  useSyncExternalStore(subscribe, getVersion)
+// Hook léger : abonne uniquement le composant appelant au store (Header, BottomNav…)
+function useStore() { useSyncExternalStore(subscribe, getVersion) }
 
+export default function App() {
+  // App ne s'abonne plus au store global — chaque sous-composant le fait lui-même.
+  // Seul l'état "prêt" (init terminé) est suivi ici.
+  const [ready, setReady] = useState(false)
   const [session, setSession] = useState(() => {
     try { return JSON.parse(localStorage.getItem(SESSION_KEY)) } catch { return null }
   })
@@ -32,7 +35,10 @@ export default function App() {
 
   // Démarrage : charge le global, puis le groupe de la session (défaut "Studio 1")
   useEffect(() => {
-    init().then(() => { if (session) enterGroup(session.group || 'Studio 1') })
+    init().then(() => {
+      setReady(true)
+      if (session) enterGroup(session.group || 'Studio 1')
+    })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -49,7 +55,7 @@ export default function App() {
   return (
     <>
       {splash && <Splash onDone={() => setSplash(false)} />}
-      {!isReady() ? <Loading /> : (
+      {!ready ? <Loading /> : (
         <SessionCtx.Provider value={{ session, login, logout }}>
           <div className="app">
             {session && <PageBg />}
@@ -107,6 +113,7 @@ function Loading() {
 }
 
 function Header() {
+  useStore()
   const { session, logout } = useSession()
   const { t } = useT()
   const navigate = useNavigate()
@@ -130,6 +137,7 @@ function Header() {
 }
 
 function BottomNav() {
+  useStore()
   const { t } = useT()
   const hasLive = getMatches().some(m => m.status === 'live')
   return (
