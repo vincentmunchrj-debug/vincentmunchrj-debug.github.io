@@ -91,22 +91,39 @@ async function hydrateGlobal() {
   }
 }
 
+// Charge TOUTES les lignes d'une table filtrée par groupe, en paginant.
+// ⚠️ Indispensable : Supabase/PostgREST plafonne chaque requête à 1000 lignes par défaut.
+// Studio 1 dépasse 1000 paris → sans pagination, les paris au-delà de 1000 étaient
+// ignorés en silence (faux « Sem palpite », points live manquants).
+async function fetchAllByGroup(table, columns, g) {
+  const PAGE = 1000
+  const rows = []
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabase.from(table).select(columns)
+      .eq('group_code', g).range(from, from + PAGE - 1)
+    if (error) throw error
+    rows.push(...(data || []))
+    if (!data || data.length < PAGE) break
+  }
+  return rows
+}
+
 // Données du GROUPE courant uniquement (joueurs + pronostics du groupe).
 async function loadGroupData(g) {
   if (!g) { state = { ...state, players: [], bets: {}, picks: {} }; return }
-  const [players, bets, picks] = await Promise.all([
+  const [players, betsData, picksData] = await Promise.all([
     supabase.from('players').select('id, name').eq('group_code', g),
-    supabase.from('bets').select('*').eq('group_code', g),
-    supabase.from('champion_picks').select('*').eq('group_code', g),
+    fetchAllByGroup('bets', '*', g),          // paginé : récupère TOUS les paris (>1000)
+    fetchAllByGroup('champion_picks', '*', g),
   ])
   if (players.error) throw players.error
   const nextBets = {}
   const nextPicks = {}
-  for (const b of bets.data || []) {
+  for (const b of betsData) {
     if (!nextBets[b.player_id]) nextBets[b.player_id] = {}
     nextBets[b.player_id][b.match_id] = { home: b.pred_home, away: b.pred_away, qualifier: b.pred_winner ?? null }
   }
-  for (const p of picks.data || []) {
+  for (const p of picksData) {
     nextPicks[p.player_id] = { teams: [p.team1, p.team2, p.team3].filter(Boolean), window: p.pick_window || 'initial' }
   }
   state = { ...state, players: players.data || [], bets: nextBets, picks: nextPicks }
