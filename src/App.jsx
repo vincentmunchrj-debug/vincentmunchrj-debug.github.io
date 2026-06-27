@@ -32,6 +32,14 @@ export default function App() {
   })
   const [splash, setSplash] = useState(true)
   const [chatOpen, setChatOpen] = useState(false)
+  // pop-up explicatif matchs KO : affiché UNE seule fois par appareil (mémorisé après fermeture)
+  const [showKoInfo, setShowKoInfo] = useState(() => {
+    try { return !localStorage.getItem('bolaocopa26.koInfoSeen.v1') } catch { return true }
+  })
+  const dismissKoInfo = () => {
+    setShowKoInfo(false)
+    try { localStorage.setItem('bolaocopa26.koInfoSeen.v1', '1') } catch { /* ignore */ }
+  }
 
   // Démarrage : charge le global, puis le groupe de la session (défaut "Studio 1")
   useEffect(() => {
@@ -71,6 +79,7 @@ export default function App() {
               </Routes>
             </div>
             {session && <BottomNav />}
+            {session && !splash && showKoInfo && <KoInfoModal onClose={dismissKoInfo} />}
             {session && !chatOpen && <ChatBubble onOpen={() => setChatOpen(true)} />}
             {session && chatOpen && (
               <div className="chat-overlay" onClick={(e) => { if (e.target === e.currentTarget) setChatOpen(false) }}>
@@ -81,6 +90,20 @@ export default function App() {
         </SessionCtx.Provider>
       )}
     </>
+  )
+}
+
+function KoInfoModal({ onClose }) {
+  const { t } = useT()
+  return (
+    <div className="ko-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
+      <div className="ko-modal">
+        <img className="ko-modal-cup" src="/img/minicopa.png" alt="" />
+        <div className="ko-modal-title">{t('koInfoTitle')}</div>
+        <div className="ko-modal-text">{t('koInfoText')}</div>
+        <button className="btn" onClick={onClose}>{t('koInfoBtn')}</button>
+      </div>
+    </div>
   )
 }
 
