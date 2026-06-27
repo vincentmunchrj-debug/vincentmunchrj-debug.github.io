@@ -11,6 +11,23 @@ export default function Live() {
   const { t, lang } = useT()
   const [, tick] = useState(0)
 
+  // AO VIVO temporairement bloqué : le classement en direct est faux.
+  // On bloque l'accès à la page tant que ce n'est pas corrigé.
+  const LIVE_BLOCKED = true
+  if (LIVE_BLOCKED) {
+    return (
+      <div>
+        <h2 className="page-title">🔴 {t('navLive')}</h2>
+        <div className="card" style={{ textAlign: 'center', padding: '32px 14px' }}>
+          <p className="muted" style={{ fontSize: 16, lineHeight: 1.5 }}>
+            ⏳ Classement en direct momentanément indisponible.<br />
+            Placar ao vivo temporariamente indisponível.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   useEffect(() => {
     refreshAll()
     const timer = setInterval(() => { refreshAll(); tick(n => n + 1) }, 30000)
