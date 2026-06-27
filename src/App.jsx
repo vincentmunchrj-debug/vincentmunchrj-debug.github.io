@@ -32,14 +32,8 @@ export default function App() {
   })
   const [splash, setSplash] = useState(true)
   const [chatOpen, setChatOpen] = useState(false)
-  // pop-up explicatif matchs KO : affiché UNE seule fois par appareil (mémorisé après fermeture)
-  const [showKoInfo, setShowKoInfo] = useState(() => {
-    try { return !localStorage.getItem('bolaocopa26.koInfoSeen.v1') } catch { return true }
-  })
-  const dismissKoInfo = () => {
-    setShowKoInfo(false)
-    try { localStorage.setItem('bolaocopa26.koInfoSeen.v1', '1') } catch { /* ignore */ }
-  }
+  // pop-up explicatif matchs KO : affiché à CHAQUE ouverture (bouton "Fermer", pas de mémorisation)
+  const [showKoInfo, setShowKoInfo] = useState(true)
 
   // Démarrage : charge le global, puis le groupe de la session (défaut "Studio 1")
   useEffect(() => {
@@ -79,7 +73,7 @@ export default function App() {
               </Routes>
             </div>
             {session && <BottomNav />}
-            {session && !splash && showKoInfo && <KoInfoModal onClose={dismissKoInfo} />}
+            {session && !splash && showKoInfo && <KoInfoModal onClose={() => setShowKoInfo(false)} />}
             {session && !chatOpen && <ChatBubble onOpen={() => setChatOpen(true)} />}
             {session && chatOpen && (
               <div className="chat-overlay" onClick={(e) => { if (e.target === e.currentTarget) setChatOpen(false) }}>
