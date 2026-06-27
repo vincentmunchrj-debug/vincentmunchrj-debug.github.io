@@ -146,11 +146,10 @@ function BottomNav() {
       <NavLink to="/champion"><span className="ic">👑</span>{t('navChampion')}</NavLink>
       <NavLink to="/ranking"><span className="ic">📊</span>{t('navRanking')}</NavLink>
       {hasLive && (
-        // AO VIVO temporairement désactivé (classement live faux) — bouton visible mais inactif
-        <span className="live-tab disabled" aria-disabled="true" style={{ opacity: 0.4, pointerEvents: 'none' }}>
+        <NavLink to="/live" className={({ isActive }) => 'live-tab' + (isActive ? ' active' : '')}>
           <span className="ic">🔴</span>
           {t('navLive')}
-        </span>
+        </NavLink>
       )}
     </nav>
   )
