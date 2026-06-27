@@ -149,10 +149,20 @@ export async function init() {
   emit()
 }
 
-// Poll léger (scores des matchs + dernier message pour le point rouge du chat)
+// Poll (scores des matchs + pronostics du groupe + dernier message pour le point rouge du chat).
+// IMPORTANT : on recharge AUSSI les pronostics (loadGroupData), pas seulement les scores.
+// Sinon un pari enregistré (depuis un autre appareil, ou juste avant qu'un match passe live)
+// n'apparaît pas sur une page déjà ouverte → faux « Sem palpite ». Le rechargement des paris
+// ne perturbe pas une saisie en cours : l'effet ne se déclenche que si la valeur SAUVÉE change.
 export async function refresh() {
   if (!state.online) return
-  try { await hydrateLight(); emit() } catch { /* garde l'état courant */ }
+  try {
+    await Promise.all([
+      hydrateLight(),
+      state.group ? loadGroupData(state.group) : Promise.resolve(),
+    ])
+    emit()
+  } catch { /* garde l'état courant */ }
   if (supabase && state.group) {
     supabase.from('messages').select('created_at').eq('group_code', state.group)
       .order('created_at', { ascending: false }).limit(1)
