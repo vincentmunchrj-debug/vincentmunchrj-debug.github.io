@@ -23,15 +23,17 @@ export default function Matches() {
     if (m.phase !== 'groups' || !m.home || !m.away) continue
     ;(byGroup[m.group] ||= []).push(m)
   }
-  const r1Ids = new Set(); const r2Ids = new Set()
+  const r1Ids = new Set(); const r2Ids = new Set(); const r3Ids = new Set()
   for (const g of Object.keys(byGroup)) {
     const sorted = [...byGroup[g]].sort((a, b) => a.kickoff.localeCompare(b.kickoff))
     sorted.slice(0, 2).forEach((m) => r1Ids.add(m.id))
     sorted.slice(2, 4).forEach((m) => r2Ids.add(m.id))
+    sorted.slice(4, 6).forEach((m) => r3Ids.add(m.id))
   }
   const round1 = visible.filter((m) => r1Ids.has(m.id))
   const round2 = visible.filter((m) => r2Ids.has(m.id))
-  const rest = visible.filter((m) => !r1Ids.has(m.id) && !r2Ids.has(m.id))
+  const round3 = visible.filter((m) => r3Ids.has(m.id))
+  const rest = visible.filter((m) => !r1Ids.has(m.id) && !r2Ids.has(m.id) && !r3Ids.has(m.id))
 
   return (
     <div>
@@ -43,6 +45,9 @@ export default function Matches() {
       )}
       {round2.length > 0 && (
         <FoldSection title={t('round2')} matches={round2} bets={bets} playerId={session.id} onSaved={refresh} />
+      )}
+      {round3.length > 0 && (
+        <FoldSection title={t('round3')} matches={round3} bets={bets} playerId={session.id} onSaved={refresh} />
       )}
 
       {rest.map((m) => (
