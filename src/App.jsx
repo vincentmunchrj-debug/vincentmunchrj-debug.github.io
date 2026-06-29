@@ -32,8 +32,6 @@ export default function App() {
   })
   const [splash, setSplash] = useState(true)
   const [chatOpen, setChatOpen] = useState(false)
-  // pop-up explicatif matchs KO : affiché à CHAQUE ouverture (bouton "Fermer", pas de mémorisation)
-  const [showKoInfo, setShowKoInfo] = useState(true)
 
   // Démarrage : charge le global, puis le groupe de la session (défaut "Studio 1")
   useEffect(() => {
@@ -73,7 +71,7 @@ export default function App() {
               </Routes>
             </div>
             {session && <BottomNav />}
-            {session && !splash && showKoInfo && <KoInfoModal onClose={() => setShowKoInfo(false)} />}
+            {/* pop-up règles KO désactivé (les joueurs connaissent la règle). Réactivable : voir KoInfoModal. */}
             {session && !chatOpen && <ChatBubble onOpen={() => setChatOpen(true)} />}
             {session && chatOpen && (
               <div className="chat-overlay" onClick={(e) => { if (e.target === e.currentTarget) setChatOpen(false) }}>
