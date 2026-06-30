@@ -48,6 +48,7 @@ export default function ChatPanel({ onClose }) {
   const [showOrig, setShowOrig] = useState({})
   const [mentionQ, setMentionQ] = useState(null) // null = fermé, '' = tout, 'vi' = préfixe
   const [lightbox, setLightbox] = useState(null) // URL de l'image agrandie
+  const [pendingPhoto, setPendingPhoto] = useState(null) // { blob, previewUrl } en attente d'envoi
   const inputRef = useRef(null)
   const bottomRef = useRef(null)
   const fileInputRef = useRef(null)
@@ -66,6 +67,11 @@ export default function ChatPanel({ onClose }) {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages.length])
+
+  // Libère l'aperçu photo si le panneau se ferme avec une photo en attente
+  useEffect(() => () => {
+    setPendingPhoto((p) => { if (p?.previewUrl) URL.revokeObjectURL(p.previewUrl); return null })
+  }, [])
 
   // Mot « tout le groupe » selon la langue active (proposé en tête de liste)
   const globalWord = lang === 'fr' ? 'studio' : 'todos'
@@ -120,31 +126,62 @@ export default function ChatPanel({ onClose }) {
 
   const handleSend = async () => {
     const txt = input.trim()
-    if (!txt || sending) return
+    if (busy) return
+    if (!txt && !pendingPhoto) return
+    setMentionQ(null)
+
+    // Envoi avec photo : on uploade d'abord, puis on poste (photo + légende éventuelle)
+    if (pendingPhoto) {
+      setUploading(true)
+      const caption = txt || null
+      setInput('')
+      try {
+        const url = await uploadChatImage(pendingPhoto.blob)
+        if (url) {
+          await postMessage(group, session.id, session.name, caption, lang, url)
+          clearPendingPhoto()
+        } else {
+          // échec d'upload : on restaure la légende pour ne pas la perdre
+          if (caption) setInput(caption)
+        }
+      } catch (err) {
+        console.warn('photo upload:', err)
+        if (caption) setInput(caption)
+      }
+      setUploading(false)
+      return
+    }
+
+    // Envoi texte simple
     setSending(true)
     setInput('')
-    setMentionQ(null)
     await postMessage(group, session.id, session.name, txt, lang)
     setSending(false)
   }
 
-  // Sélection d'une photo : compression → upload → envoi (légende = texte saisi, si présent)
+  // Sélection d'une photo : compression → aperçu (l'envoi se fait ensuite via « Envoyer »)
   const handleFileSelect = async (e) => {
     const file = e.target.files?.[0]
     e.target.value = '' // permet de re-sélectionner le même fichier
     if (!file) return
     setUploading(true)
-    const caption = input.trim() || null
-    setInput('')
-    setMentionQ(null)
     try {
       const compressed = await compressToJpeg(file)
-      const url = await uploadChatImage(compressed)
-      if (url) await postMessage(group, session.id, session.name, caption, lang, url)
+      clearPendingPhoto()
+      setPendingPhoto({ blob: compressed, previewUrl: URL.createObjectURL(compressed) })
+      inputRef.current?.focus()
     } catch (err) {
-      console.warn('photo upload:', err)
+      console.warn('photo compress:', err)
     }
     setUploading(false)
+  }
+
+  // Annule la photo en attente (revenir en arrière)
+  const clearPendingPhoto = () => {
+    setPendingPhoto((p) => {
+      if (p?.previewUrl) URL.revokeObjectURL(p.previewUrl)
+      return null
+    })
   }
 
   // Rendu du texte avec @mentions surlignées
@@ -212,6 +249,25 @@ export default function ChatPanel({ onClose }) {
           <div ref={bottomRef} />
         </div>
 
+        {/* Aperçu de la photo en attente d'envoi — ✕ pour annuler */}
+        {pendingPhoto && (
+          <div className="chat-photo-preview">
+            <img src={pendingPhoto.previewUrl} alt="" className="chat-photo-preview-img" />
+            <span className="chat-photo-preview-label">
+              {lang === 'fr' ? 'Photo prête — ajoutez une légende si vous voulez' : 'Foto pronta — adicione uma legenda se quiser'}
+            </span>
+            <button
+              className="chat-photo-cancel"
+              type="button"
+              onClick={clearPendingPhoto}
+              disabled={uploading}
+              aria-label={lang === 'fr' ? 'Annuler la photo' : 'Cancelar foto'}
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
         <div className="chat-input-row">
           {suggestions.length > 0 && mentionQ !== null && (
             <div className="chat-mention-list">
@@ -249,23 +305,37 @@ export default function ChatPanel({ onClose }) {
             value={input}
             onChange={handleChange}
             onKeyDown={handleKeyDown}
-            placeholder={t('chatPlaceholder')}
+            placeholder={pendingPhoto
+              ? (lang === 'fr' ? 'Légende (optionnelle)…' : 'Legenda (opcional)…')
+              : t('chatPlaceholder')}
             maxLength={500}
             autoComplete="off"
           />
-          <button className="chat-send-btn" onClick={handleSend} disabled={!input.trim() || busy}>
+          <button
+            className="chat-send-btn"
+            onClick={handleSend}
+            disabled={(!input.trim() && !pendingPhoto) || busy}
+          >
             {t('chatSend')}
           </button>
         </div>
       </div>
 
-      {/* Lightbox — tap pour fermer */}
+      {/* Lightbox — ✕ ou tap ailleurs pour fermer */}
       {lightbox && (
         <div
           className="chat-lightbox"
           onClick={(e) => { e.stopPropagation(); setLightbox(null) }}
         >
-          <img src={lightbox} alt="" className="chat-lightbox-img" />
+          <button
+            className="chat-lightbox-close"
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setLightbox(null) }}
+            aria-label={lang === 'fr' ? 'Fermer' : 'Fechar'}
+          >
+            ✕
+          </button>
+          <img src={lightbox} alt="" className="chat-lightbox-img" onClick={(e) => e.stopPropagation()} />
         </div>
       )}
     </>
