@@ -383,17 +383,32 @@ export async function loadMessages(group) {
   }
 }
 
-export async function postMessage(group, playerId, name, text, langOrig) {
+export async function postMessage(group, playerId, name, text, langOrig, imageUrl = null) {
   if (!supabase || !group) return null
   try {
     const { data, error } = await supabase.functions.invoke('post-message', {
-      body: { group_code: group, player_id: playerId, name, text, lang_orig: langOrig }
+      body: {
+        group_code: group, player_id: playerId, name,
+        text: text || null, lang_orig: langOrig,
+        image_url: imageUrl || null,
+      }
     })
     if (error) { console.warn('postMessage:', error.message); return null }
     return data
   } catch (e) {
     console.warn('postMessage:', e?.message || e); return null
   }
+}
+
+export async function uploadChatImage(blob) {
+  if (!supabase) return null
+  const name = (crypto.randomUUID?.() || Date.now().toString(36)) + '.jpg'
+  const { error } = await supabase.storage.from('chat-photos').upload(name, blob, {
+    contentType: 'image/jpeg',
+    upsert: false,
+  })
+  if (error) { console.warn('uploadChatImage:', error.message); return null }
+  return supabase.storage.from('chat-photos').getPublicUrl(name).data.publicUrl
 }
 
 export function openChatRealtime(group) {

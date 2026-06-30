@@ -1,6 +1,7 @@
 // Edge Function — post-message
 // Traduit le message (DeepL) puis l'insère dans messages (service role).
 // Protège les @mentions pendant la traduction.
+// Accepte text (optionnel si image_url fournie) + image_url (optionnel).
 // Déployer avec : --no-verify-jwt
 
 const URL_ = Deno.env.get("SUPABASE_URL")!;
@@ -37,39 +38,61 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
   if (req.method !== "POST") return new Response("Method Not Allowed", { status: 405 });
 
-  let body: { group_code?: string; player_id?: string; name?: string; text?: string; lang_orig?: string };
+  let body: {
+    group_code?: string; player_id?: string; name?: string;
+    text?: string | null; lang_orig?: string; image_url?: string | null;
+  };
   try { body = await req.json(); }
   catch { return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400, headers: cors }); }
 
-  const { group_code, player_id, name, text, lang_orig } = body;
-  if (!group_code || !player_id || !name || !text || !lang_orig) {
+  const { group_code, player_id, name, text, lang_orig, image_url } = body;
+
+  // Champs toujours requis
+  if (!group_code || !player_id || !name || !lang_orig) {
     return new Response(JSON.stringify({ error: "Missing fields" }), { status: 400, headers: cors });
   }
   if (!["fr", "pt"].includes(lang_orig)) {
     return new Response(JSON.stringify({ error: "Invalid lang_orig" }), { status: 400, headers: cors });
   }
-  if (text.length > 500) {
+
+  const hasText = typeof text === "string" && text.trim().length > 0;
+  const hasImage = typeof image_url === "string" && image_url.startsWith(URL_ + "/storage/v1/object/public/chat-photos/");
+
+  if (!hasText && !hasImage) {
+    return new Response(JSON.stringify({ error: "text or image_url required" }), { status: 400, headers: cors });
+  }
+  if (hasText && text!.length > 500) {
     return new Response(JSON.stringify({ error: "Message too long (max 500)" }), { status: 400, headers: cors });
   }
 
-  let text_fr: string, text_pt: string;
-  try {
-    if (lang_orig === "fr") {
-      text_fr = text;
-      text_pt = await translate(text, "FR", "pt");
-    } else {
-      text_pt = text;
-      text_fr = await translate(text, "PT", "fr");
+  let text_fr: string | null = null;
+  let text_pt: string | null = null;
+  if (hasText) {
+    try {
+      if (lang_orig === "fr") {
+        text_fr = text!;
+        text_pt = await translate(text!, "FR", "pt");
+      } else {
+        text_pt = text!;
+        text_fr = await translate(text!, "PT", "fr");
+      }
+    } catch (e) {
+      console.error("DeepL error (fallback to original):", e);
+      text_fr = text!; text_pt = text!;
     }
-  } catch (e) {
-    console.error("DeepL error (fallback to original):", e);
-    text_fr = text; text_pt = text;
   }
 
   const res = await fetch(`${URL_}/rest/v1/messages`, {
     method: "POST",
     headers: { ...H, Prefer: "return=representation" },
-    body: JSON.stringify({ group_code, player_id, name, text_orig: text, lang_orig, text_fr, text_pt }),
+    body: JSON.stringify({
+      group_code, player_id, name,
+      text_orig: hasText ? text : null,
+      lang_orig,
+      text_fr,
+      text_pt,
+      image_url: hasImage ? image_url : null,
+    }),
   });
   if (!res.ok) {
     const err = await res.text();

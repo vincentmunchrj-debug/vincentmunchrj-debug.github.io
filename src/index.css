@@ -562,3 +562,47 @@ body {
 }
 .chat-send-btn:disabled { opacity: .45; cursor: default; }
 .chat-send-btn:active { transform: scale(.95); }
+
+/* Bouton photo */
+.chat-photo-btn {
+  flex-shrink: 0;
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: #f0f4fa;
+  font-size: 19px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: transform .12s;
+}
+.chat-photo-btn:disabled { opacity: .45; cursor: default; }
+.chat-photo-btn:active { transform: scale(.88); }
+
+/* Miniature dans la bulle */
+.chat-msg-img {
+  display: block;
+  max-width: 220px;
+  max-height: 220px;
+  border-radius: 12px;
+  cursor: zoom-in;
+  margin-top: 4px;
+  object-fit: cover;
+  border: 1px solid rgba(0,0,0,.08);
+  box-shadow: 0 2px 8px rgba(0,0,0,.10);
+}
+.chat-msg.me .chat-msg-img { margin-left: auto; }
+
+/* Lightbox plein écran */
+.chat-lightbox {
+  position: fixed; inset: 0; z-index: 50;
+  background: rgba(0,0,0,.88);
+  display: flex; align-items: center; justify-content: center;
+  cursor: zoom-out;
+}
+.chat-lightbox-img {
+  max-width: 96vw;
+  max-height: 88vh;
+  border-radius: 10px;
+  object-fit: contain;
+  box-shadow: 0 8px 40px rgba(0,0,0,.5);
+}

@@ -3,7 +3,7 @@ import { useSession } from '../App.jsx'
 import {
   subscribeChatMessages, getChatMessages,
   getPlayers, getGroup,
-  loadMessages, postMessage,
+  loadMessages, postMessage, uploadChatImage,
   openChatRealtime, closeChatRealtime, markChatSeen,
 } from '../lib/store.js'
 import { useT } from '../i18n.js'
@@ -11,6 +11,29 @@ import { useT } from '../i18n.js'
 const MENTION_RE = /@([\wÀ-ſ]+)/g
 // Mention « tout le groupe » : @studio (FR) / @todos (PT). Les deux sont reconnus à la lecture.
 const GLOBAL_ALIASES = ['studio', 'todos']
+
+// Compresse une image en JPEG ≤ 1280px, ~70 % de qualité (≈ 200–400 Ko)
+async function compressToJpeg(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    const blobUrl = URL.createObjectURL(file)
+    img.onload = () => {
+      URL.revokeObjectURL(blobUrl)
+      const MAX = 1280
+      let { width, height } = img
+      if (width > MAX || height > MAX) {
+        if (width >= height) { height = Math.round(height * MAX / width); width = MAX }
+        else { width = Math.round(width * MAX / height); height = MAX }
+      }
+      const canvas = document.createElement('canvas')
+      canvas.width = width; canvas.height = height
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height)
+      canvas.toBlob(resolve, 'image/jpeg', 0.72)
+    }
+    img.onerror = reject
+    img.src = blobUrl
+  })
+}
 
 export default function ChatPanel({ onClose }) {
   const { session } = useSession()
@@ -21,10 +44,13 @@ export default function ChatPanel({ onClose }) {
 
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
+  const [uploading, setUploading] = useState(false)
   const [showOrig, setShowOrig] = useState({})
   const [mentionQ, setMentionQ] = useState(null) // null = fermé, '' = tout, 'vi' = préfixe
+  const [lightbox, setLightbox] = useState(null) // URL de l'image agrandie
   const inputRef = useRef(null)
   const bottomRef = useRef(null)
+  const fileInputRef = useRef(null)
 
   useEffect(() => {
     loadMessages(group)
@@ -102,6 +128,25 @@ export default function ChatPanel({ onClose }) {
     setSending(false)
   }
 
+  // Sélection d'une photo : compression → upload → envoi (légende = texte saisi, si présent)
+  const handleFileSelect = async (e) => {
+    const file = e.target.files?.[0]
+    e.target.value = '' // permet de re-sélectionner le même fichier
+    if (!file) return
+    setUploading(true)
+    const caption = input.trim() || null
+    setInput('')
+    setMentionQ(null)
+    try {
+      const compressed = await compressToJpeg(file)
+      const url = await uploadChatImage(compressed)
+      if (url) await postMessage(group, session.id, session.name, caption, lang, url)
+    } catch (err) {
+      console.warn('photo upload:', err)
+    }
+    setUploading(false)
+  }
+
   // Rendu du texte avec @mentions surlignées
   const renderText = (text) => {
     if (!text) return null
@@ -120,70 +165,109 @@ export default function ChatPanel({ onClose }) {
   const fmt = (iso) =>
     new Date(iso).toLocaleTimeString(lang === 'fr' ? 'fr-FR' : 'pt-BR', { hour: '2-digit', minute: '2-digit' })
 
+  const busy = sending || uploading
+
   return (
-    <div className="chat-panel">
-      <div className="chat-header">
-        <span className="chat-title">{t('chatTitle')} — {group}</span>
-        <button className="chat-close" onClick={onClose} aria-label="Fermer">✕</button>
-      </div>
+    <>
+      <div className="chat-panel">
+        <div className="chat-header">
+          <span className="chat-title">{t('chatTitle')} — {group}</span>
+          <button className="chat-close" onClick={onClose} aria-label="Fermer">✕</button>
+        </div>
 
-      <div className="chat-messages">
-        {messages.length === 0 && <p className="chat-empty">{t('chatEmpty')}</p>}
-        {messages.map((msg) => {
-          const isMe = msg.player_id === session.id
-          const text = (lang === 'fr' ? msg.text_fr : msg.text_pt) || msg.text_orig
-          const isDiff = text && msg.text_orig && text !== msg.text_orig
-          const displayed = showOrig[msg.id] ? msg.text_orig : text
-          return (
-            <div key={msg.id} className={'chat-msg' + (isMe ? ' me' : '')}>
-              <div className="chat-msg-header">
-                <span className="chat-msg-name">{msg.name}</span>
-                <span className="chat-msg-time">{fmt(msg.created_at)}</span>
+        <div className="chat-messages">
+          {messages.length === 0 && <p className="chat-empty">{t('chatEmpty')}</p>}
+          {messages.map((msg) => {
+            const isMe = msg.player_id === session.id
+            const text = (lang === 'fr' ? msg.text_fr : msg.text_pt) || msg.text_orig
+            const isDiff = text && msg.text_orig && text !== msg.text_orig
+            const displayed = showOrig[msg.id] ? msg.text_orig : text
+            return (
+              <div key={msg.id} className={'chat-msg' + (isMe ? ' me' : '')}>
+                <div className="chat-msg-header">
+                  <span className="chat-msg-name">{msg.name}</span>
+                  <span className="chat-msg-time">{fmt(msg.created_at)}</span>
+                </div>
+                {msg.image_url && (
+                  <img
+                    className="chat-msg-img"
+                    src={msg.image_url}
+                    alt=""
+                    onClick={() => setLightbox(msg.image_url)}
+                  />
+                )}
+                {displayed && <div className="chat-msg-text">{renderText(displayed)}</div>}
+                {isDiff && (
+                  <button
+                    className="chat-orig-btn"
+                    onClick={() => setShowOrig((s) => ({ ...s, [msg.id]: !s[msg.id] }))}>
+                    {showOrig[msg.id]
+                      ? (lang === 'fr' ? '← traduction' : '← tradução')
+                      : t('seeOriginal')}
+                  </button>
+                )}
               </div>
-              <div className="chat-msg-text">{renderText(displayed)}</div>
-              {isDiff && (
+            )
+          })}
+          <div ref={bottomRef} />
+        </div>
+
+        <div className="chat-input-row">
+          {suggestions.length > 0 && mentionQ !== null && (
+            <div className="chat-mention-list">
+              {suggestions.map((p) => (
                 <button
-                  className="chat-orig-btn"
-                  onClick={() => setShowOrig((s) => ({ ...s, [msg.id]: !s[msg.id] }))}>
-                  {showOrig[msg.id]
-                    ? (lang === 'fr' ? '← traduction' : '← tradução')
-                    : t('seeOriginal')}
+                  key={p.id}
+                  className={'chat-mention-opt' + (p.all ? ' all' : '')}
+                  onMouseDown={(e) => { e.preventDefault(); insertMention(p.name) }}>
+                  @{p.name}
+                  {p.all && <span className="mention-hint"> · {lang === 'fr' ? 'tout le groupe' : 'todo o grupo'}</span>}
                 </button>
-              )}
+              ))}
             </div>
-          )
-        })}
-        <div ref={bottomRef} />
+          )}
+          {/* Input fichier caché — déclenché par le bouton 📷 */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={handleFileSelect}
+          />
+          <button
+            className="chat-photo-btn"
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={busy}
+            aria-label={lang === 'fr' ? 'Envoyer une photo' : 'Enviar foto'}
+          >
+            {uploading ? '⏳' : '📷'}
+          </button>
+          <input
+            ref={inputRef}
+            className="chat-input"
+            value={input}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            placeholder={t('chatPlaceholder')}
+            maxLength={500}
+            autoComplete="off"
+          />
+          <button className="chat-send-btn" onClick={handleSend} disabled={!input.trim() || busy}>
+            {t('chatSend')}
+          </button>
+        </div>
       </div>
 
-      <div className="chat-input-row">
-        {suggestions.length > 0 && mentionQ !== null && (
-          <div className="chat-mention-list">
-            {suggestions.map((p) => (
-              <button
-                key={p.id}
-                className={'chat-mention-opt' + (p.all ? ' all' : '')}
-                onMouseDown={(e) => { e.preventDefault(); insertMention(p.name) }}>
-                @{p.name}
-                {p.all && <span className="mention-hint"> · {lang === 'fr' ? 'tout le groupe' : 'todo o grupo'}</span>}
-              </button>
-            ))}
-          </div>
-        )}
-        <input
-          ref={inputRef}
-          className="chat-input"
-          value={input}
-          onChange={handleChange}
-          onKeyDown={handleKeyDown}
-          placeholder={t('chatPlaceholder')}
-          maxLength={500}
-          autoComplete="off"
-        />
-        <button className="chat-send-btn" onClick={handleSend} disabled={!input.trim() || sending}>
-          {t('chatSend')}
-        </button>
-      </div>
-    </div>
+      {/* Lightbox — tap pour fermer */}
+      {lightbox && (
+        <div
+          className="chat-lightbox"
+          onClick={(e) => { e.stopPropagation(); setLightbox(null) }}
+        >
+          <img src={lightbox} alt="" className="chat-lightbox-img" />
+        </div>
+      )}
+    </>
   )
 }
