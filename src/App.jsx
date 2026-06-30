@@ -32,6 +32,14 @@ export default function App() {
   })
   const [splash, setSplash] = useState(true)
   const [chatOpen, setChatOpen] = useState(false)
+  // Annonce « photos dans le chat » — affichée une seule fois (nouveauté)
+  const [showPhotoInfo, setShowPhotoInfo] = useState(() => {
+    try { return !localStorage.getItem('bolaocopa26.photoInfoSeen') } catch { return false }
+  })
+  const closePhotoInfo = () => {
+    try { localStorage.setItem('bolaocopa26.photoInfoSeen', '1') } catch { /* ignore */ }
+    setShowPhotoInfo(false)
+  }
 
   // Démarrage : charge le global, puis le groupe de la session (défaut "Studio 1")
   useEffect(() => {
@@ -72,6 +80,7 @@ export default function App() {
             </div>
             {session && <BottomNav />}
             {/* pop-up règles KO désactivé (les joueurs connaissent la règle). Réactivable : voir KoInfoModal. */}
+            {session && !splash && showPhotoInfo && <PhotoInfoModal onClose={closePhotoInfo} />}
             {session && !chatOpen && <ChatBubble onOpen={() => setChatOpen(true)} />}
             {session && chatOpen && (
               <div className="chat-overlay" onClick={(e) => { if (e.target === e.currentTarget) setChatOpen(false) }}>
@@ -94,6 +103,20 @@ function KoInfoModal({ onClose }) {
         <div className="ko-modal-title">{t('koInfoTitle')}</div>
         <div className="ko-modal-text">{t('koInfoText')}</div>
         <button className="btn" onClick={onClose}>{t('koInfoBtn')}</button>
+      </div>
+    </div>
+  )
+}
+
+function PhotoInfoModal({ onClose }) {
+  const { t } = useT()
+  return (
+    <div className="ko-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
+      <div className="ko-modal">
+        <div className="ko-modal-icon" aria-hidden="true">📷</div>
+        <div className="ko-modal-title">{t('photoInfoTitle')}</div>
+        <div className="ko-modal-text">{t('photoInfoText')}</div>
+        <button className="btn" onClick={onClose}>{t('photoInfoBtn')}</button>
       </div>
     </div>
   )
