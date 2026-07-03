@@ -73,32 +73,59 @@ export function scoreMatch(pred, actual, ctx = {}) {
 //  COMPÉTITION 2 — Vainqueur de la Coupe
 // ------------------------------------------------------------
 //  Le joueur choisit 3 équipes. Il suffit qu'UNE devienne championne.
-//  Le nombre de points dépend de la DERNIÈRE modification de ses 3 équipes :
+//  Le barème s'applique ÉQUIPE PAR ÉQUIPE : chaque équipe garde la « fenêtre »
+//  du moment où elle a été choisie. Remplacer une équipe ne dégrade QUE cette
+//  équipe-là ; les équipes conservées gardent leur palier d'origine.
 //
-//   - jamais changé depuis le début ..................... 25 pts
-//   - modifié après la phase de groupes ................. 15 pts
-//   - modifié après les 16es (tour à 32 équipes) ........ 12 pts
-//   - modifié après les 8es (tour à 16 équipes) ......... 10 pts
+//   - choisie au départ, jamais changée ................. 25 pts
+//   - (r)ajoutée après la phase de groupes .............. 15 pts
+//   - (r)ajoutée après les 16es (tour à 32 équipes) ..... 12 pts
+//   - (r)ajoutée après les 8es (tour à 16 équipes) ...... 10 pts
 //   - verrouillage définitif au début des quarts ....... (plus de modif)
 //
-//  La « fenêtre » de modification (championWindow) est posée au moment
-//  où le joueur enregistre, selon la phase courante du tournoi.
+//  À l'enregistrement, chaque équipe reçoit : sa fenêtre d'origine si elle
+//  était déjà présente, ou la fenêtre courante si elle vient d'être ajoutée
+//  (cf. mergePickWindows).
 export const CHAMPION_POINTS = {
-  initial: 25,      // choix initial, jamais retouché
-  after_groups: 15, // dernière modif après la phase de groupes
-  after_r32: 12,    // dernière modif après les 16es
-  after_r16: 10,    // dernière modif après les 8es
+  initial: 25,      // équipe choisie au départ, jamais retouchée
+  after_groups: 15, // équipe (r)ajoutée après la phase de groupes
+  after_r32: 12,    // équipe (r)ajoutée après les 16es
+  after_r16: 10,    // équipe (r)ajoutée après les 8es
+}
+
+// Ordre des paliers, du plus au moins avantageux. Sert au repli de compat
+// (pick_window = palier le moins avantageux des 3).
+export const CHAMPION_WINDOW_ORDER = ['initial', 'after_groups', 'after_r32', 'after_r16', 'closed']
+
+// Fenêtre d'une équipe donnée dans un pick.
+// Repli sur l'ancienne window unique (`pick.window`) pour les picks non migrés.
+export function windowOfTeam(pick, index) {
+  if (pick && Array.isArray(pick.windows) && pick.windows[index] != null) return pick.windows[index]
+  return (pick && pick.window) || 'initial'
 }
 
 // Calcule les points de la compétition 2 pour un joueur.
-//  pick = { teams: [id, id, id], window: 'initial' | 'after_groups' | ... }
+//  pick = { teams: [id, id, id], windows: ['initial', 'after_r16', ...] }
 //  championTeamId = équipe réellement championne (ou null si pas encore connue)
+//  Les points = ceux de la fenêtre DE L'ÉQUIPE championne.
 export function scoreChampion(pick, championTeamId) {
   if (!pick || !championTeamId) return { points: 0, hit: false }
   if (!Array.isArray(pick.teams)) return { points: 0, hit: false }
-  const hit = pick.teams.includes(championTeamId)
-  if (!hit) return { points: 0, hit: false }
-  return { points: CHAMPION_POINTS[pick.window] ?? 0, hit: true }
+  const idx = pick.teams.indexOf(championTeamId)
+  if (idx < 0) return { points: 0, hit: false }
+  const w = windowOfTeam(pick, idx)
+  return { points: CHAMPION_POINTS[w] ?? 0, hit: true }
+}
+
+// Recalcule la fenêtre de CHAQUE équipe lors d'un enregistrement :
+//  - équipe déjà présente (conservée)  -> garde sa fenêtre d'origine
+//  - équipe nouvelle (remplacement)    -> prend la fenêtre courante (palier du moment)
+export function mergePickWindows(oldPick, newTeams, currentWindow) {
+  const oldTeams = (oldPick && Array.isArray(oldPick.teams)) ? oldPick.teams : []
+  return newTeams.map((id) => {
+    const i = oldTeams.indexOf(id)
+    return i < 0 ? currentWindow : windowOfTeam(oldPick, i)
+  })
 }
 
 // ------------------------------------------------------------

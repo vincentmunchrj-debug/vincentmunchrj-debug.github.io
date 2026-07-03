@@ -12,6 +12,7 @@
 
 import { supabase, hasSupabase } from './supabaseClient'
 import { MATCHES_2026 } from '../data/matches2026'
+import { CHAMPION_WINDOW_ORDER } from './scoring'
 
 const KEY = 'bolaocopa26.v1'
 
@@ -124,7 +125,13 @@ async function loadGroupData(g) {
     nextBets[b.player_id][b.match_id] = { home: b.pred_home, away: b.pred_away, qualifier: b.pred_winner ?? null }
   }
   for (const p of picksData) {
-    nextPicks[p.player_id] = { teams: [p.team1, p.team2, p.team3].filter(Boolean), window: p.pick_window || 'initial' }
+    // Chaque équipe garde SA fenêtre (window1/2/3). Repli sur l'ancien pick_window
+    // (picks non encore migrés) pour rester rétro-compatible.
+    const trip = [[p.team1, p.window1], [p.team2, p.window2], [p.team3, p.window3]].filter(([t]) => t)
+    nextPicks[p.player_id] = {
+      teams: trip.map(([t]) => t),
+      windows: trip.map(([, w]) => w || p.pick_window || 'initial'),
+    }
   }
   state = { ...state, players: players.data || [], bets: nextBets, picks: nextPicks }
 }
@@ -320,13 +327,21 @@ export function setBet(playerId, matchId, pred) {
 }
 
 // --- Pronostic champion ----------------------------------------
-export function setPick(playerId, teams, windowName) {
-  state.picks = { ...state.picks, [playerId]: { teams, window: windowName } }
+//  windows = fenêtre PAR équipe, alignée sur `teams` (cf. mergePickWindows).
+export function setPick(playerId, teams, windows) {
+  state.picks = { ...state.picks, [playerId]: { teams, windows } }
   emit(); saveLocal()
   if (state.online) {
+    // pick_window (compat) = palier le moins avantageux des 3 (= dernière modif)
+    const worst = (windows || []).reduce(
+      (a, b) => (CHAMPION_WINDOW_ORDER.indexOf(b) > CHAMPION_WINDOW_ORDER.indexOf(a) ? b : a),
+      'initial',
+    )
     supabase.from('champion_picks').upsert({
-      player_id: playerId, group_code: state.group || 'Studio 1', team1: teams[0] || null, team2: teams[1] || null,
-      team3: teams[2] || null, pick_window: windowName, updated_at: new Date().toISOString(),
+      player_id: playerId, group_code: state.group || 'Studio 1',
+      team1: teams[0] || null, team2: teams[1] || null, team3: teams[2] || null,
+      window1: windows[0] || 'initial', window2: windows[1] || 'initial', window3: windows[2] || 'initial',
+      pick_window: worst, updated_at: new Date().toISOString(),
     }).then(({ error }) => { if (error) console.warn('upsert pick:', error.message) })
   }
 }
