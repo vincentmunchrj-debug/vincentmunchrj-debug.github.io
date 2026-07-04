@@ -44,13 +44,31 @@ Deno.serve(async () => {
   )).json();
 
   const byMin = new Map<string, any[]>();
-  for (const m of db) { const k = toMin(m.kickoff); if (!byMin.has(k)) byMin.set(k, []); byMin.get(k)!.push(m); }
+  // Index secondaire par paire d'équipes (résistant aux retards de coup d'envoi).
+  const byTeams = new Map<string, any>();
+  for (const m of db) {
+    const k = toMin(m.kickoff);
+    if (!byMin.has(k)) byMin.set(k, []);
+    byMin.get(k)!.push(m);
+    if (m.home && m.away) {
+      const tk = norm(MAP[m.home] ?? '') + '|' + norm(MAP[m.away] ?? '');
+      if (tk !== '|') byTeams.set(tk, m);
+    }
+  }
 
   // Jours à interroger : hier + aujourd'hui (scores) ∪ jours des KO encore vides (bracket à venir).
   const now = new Date();
   const days = new Set<string>();
   for (let off = 1; off >= 0; off--) { const d = new Date(now); d.setUTCDate(d.getUTCDate() - off); days.add(d.toISOString().slice(0, 10).replace(/-/g, "")); }
-  for (const m of db) { if (m.phase !== "groups" && (!m.home || !m.away)) days.add(toYmd(m.kickoff)); }
+  for (const m of db) {
+    if (m.phase !== "groups" && (!m.home || !m.away)) {
+      days.add(toYmd(m.kickoff));
+      // ESPN classe parfois un match sous la veille (fuseau du lieu : minuit UTC = soirée locale).
+      // On interroge donc aussi J-1 pour retrouver les équipes d'un KO encore vide.
+      const d = new Date(m.kickoff); d.setUTCDate(d.getUTCDate() - 1);
+      days.add(d.toISOString().slice(0, 10).replace(/-/g, ""));
+    }
+  }
 
   let updates = 0, unresolved = 0, bracket = 0;
   const log: string[] = [];
@@ -68,16 +86,21 @@ Deno.serve(async () => {
       const a = c.competitors.find((x: any) => x.homeAway === "away");
       if (!h || !a) continue;
 
-      // Identification du match en base : par minute de coup d'envoi.
-      const min = toMin(e.date);
-      const cands = byMin.get(min) ?? [];
-      let match: any = null;
-      if (cands.length === 1) match = cands[0];
-      else if (cands.length > 1) {
-        // Plusieurs matchs à la même minute (poules) : on désambiguïse par les équipes.
-        match = cands.find((m: any) => m.home && m.away &&
-          norm(MAP[m.home]) === norm(h.team.displayName) &&
-          norm(MAP[m.away]) === norm(a.team.displayName)) ?? null;
+      // Identification du match en base.
+      // 1) Priorité : paire d'équipes connues — robuste aux retards de coup d'envoi.
+      // 2) Fallback : minute exacte — pour les slots KO bracket dont home/away sont encore null.
+      const hName = norm(h.team?.displayName ?? '');
+      const aName = norm(a.team?.displayName ?? '');
+      let match: any = byTeams.get(hName + '|' + aName) ?? null;
+      if (!match) {
+        const min = toMin(e.date);
+        const cands = byMin.get(min) ?? [];
+        if (cands.length === 1) match = cands[0];
+        else if (cands.length > 1) {
+          match = cands.find((m: any) => m.home && m.away &&
+            norm(MAP[m.home]) === hName &&
+            norm(MAP[m.away]) === aName) ?? null;
+        }
       }
       if (!match) { unresolved++; continue; }
 
