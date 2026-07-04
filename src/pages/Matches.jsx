@@ -8,7 +8,7 @@ import Crest from '../components/Crest.jsx'
 
 export default function Matches() {
   const { session } = useSession()
-  const { t } = useT()
+  const { t, dict } = useT()
   useSyncExternalStore(subscribe, getVersion)
   const matches = getMatches()
   const bets = getBets(session.id)
@@ -33,7 +33,9 @@ export default function Matches() {
   const round1 = visible.filter((m) => r1Ids.has(m.id))
   const round2 = visible.filter((m) => r2Ids.has(m.id))
   const round3 = visible.filter((m) => r3Ids.has(m.id))
-  const rest = visible.filter((m) => !r1Ids.has(m.id) && !r2Ids.has(m.id) && !r3Ids.has(m.id))
+  // 16es de finale (barrages) : regroupés dans un onglet repliable, comme les journées.
+  const roundOf32 = visible.filter((m) => m.phase === 'r32')
+  const rest = visible.filter((m) => !r1Ids.has(m.id) && !r2Ids.has(m.id) && !r3Ids.has(m.id) && m.phase !== 'r32')
 
   return (
     <div>
@@ -48,6 +50,9 @@ export default function Matches() {
       )}
       {round3.length > 0 && (
         <FoldSection title={t('round3')} matches={round3} bets={bets} playerId={session.id} onSaved={refresh} />
+      )}
+      {roundOf32.length > 0 && (
+        <FoldSection title={dict.phaseLabel.r32} matches={roundOf32} bets={bets} playerId={session.id} onSaved={refresh} />
       )}
 
       {rest.map((m) => (
